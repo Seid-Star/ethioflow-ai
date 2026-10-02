@@ -5,7 +5,7 @@ import cors from "cors";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
-
+import inventoryRoutes from "./routes/inventoryRoutes.js";
 const app = express();
 
 app.use(
@@ -31,6 +31,7 @@ app.get("/api/health", (req, res) => {
 // app.use('/api/auth', authRoutes)
 app.use("/api/products", productRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/inventory", inventoryRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
