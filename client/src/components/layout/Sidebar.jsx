@@ -50,19 +50,19 @@ const navItems = [
     to: "/dashboard/suppliers",
     icon: Truck,
     label: "Suppliers",
-    enabled: false,
+    enabled: true,
   },
   {
     to: "/dashboard/purchases",
     icon: ClipboardList,
     label: "Purchases",
-    enabled: false,
+    enabled: true,
   },
   {
     to: "/dashboard/expenses",
     icon: Wallet,
     label: "Expenses",
-    enabled: false,
+    enabled: true,
   },
   {
     to: "/dashboard/finance",
