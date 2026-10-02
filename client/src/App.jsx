@@ -6,7 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import ProtectedRoute from "./routes/ProtectedRoute";
-
+import Inventory from "./pages/Inventory";
 export default function App() {
   return (
     <Routes>
@@ -24,6 +24,7 @@ export default function App() {
       >
         <Route index element={<Dashboard />} />
         <Route path="products" element={<Products />} />
+        <Route path="inventory" element={<Inventory />} />
       </Route>
     </Routes>
   );
