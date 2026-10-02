@@ -7,6 +7,8 @@ import cookieParser from "cookie-parser";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
 import inventoryRoutes from "./routes/inventoryRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
+import saleRoutes from "./routes/saleRoutes.js";
+import customerRoutes from "./routes/customerRoutes.js";
 const app = express();
 
 app.use(
@@ -34,6 +36,8 @@ app.use("/api/products", productRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/sales", saleRoutes);
+app.use("/api/customers", customerRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
