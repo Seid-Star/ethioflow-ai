@@ -26,7 +26,7 @@ const navItems = [
     to: "/dashboard/pos",
     icon: ShoppingCart,
     label: "Sales (POS)",
-    enabled: false,
+    enabled: true,
   },
   {
     to: "/dashboard/products",
@@ -44,7 +44,7 @@ const navItems = [
     to: "/dashboard/customers",
     icon: Users,
     label: "Customers",
-    enabled: false,
+    enabled: true,
   },
   {
     to: "/dashboard/suppliers",
