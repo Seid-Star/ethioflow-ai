@@ -1,3 +1,5 @@
+import productRoutes from "./routes/productRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
@@ -27,7 +29,8 @@ app.get("/api/health", (req, res) => {
 
 // Routes get mounted here as we build them (Day 2 onward):
 // app.use('/api/auth', authRoutes)
-
+app.use("/api/products", productRoutes);
+app.use("/api/auth", authRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
