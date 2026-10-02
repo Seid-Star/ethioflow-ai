@@ -38,7 +38,7 @@ const navItems = [
     to: "/dashboard/inventory",
     icon: Boxes,
     label: "Inventory",
-    enabled: false,
+    enabled: true,
   },
   {
     to: "/dashboard/customers",
