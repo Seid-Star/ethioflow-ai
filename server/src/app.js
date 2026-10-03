@@ -13,6 +13,7 @@ import supplierRoutes from "./routes/supplierRoutes.js";
 import purchaseRoutes from "./routes/purchaseRoutes.js";
 import expenseRoutes from "./routes/expenseRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
+import aiRoutes from "./routes/aiRoutes.js";
 const app = express();
 
 app.use(
@@ -34,8 +35,6 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Routes get mounted here as we build them (Day 2 onward):
-// app.use('/api/auth', authRoutes)
 app.use("/api/products", productRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/inventory", inventoryRoutes);
@@ -46,6 +45,7 @@ app.use("/api/suppliers", supplierRoutes);
 app.use("/api/purchases", purchaseRoutes);
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/ai", aiRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
