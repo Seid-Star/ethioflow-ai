@@ -13,6 +13,8 @@ import CustomerProfile from "./pages/CustomerProfile";
 import Suppliers from "./pages/Suppliers";
 import Purchases from "./pages/Purchases";
 import Expenses from "./pages/Expenses";
+import Reports from "./pages/Reports";
+import AIAdvisor from "./pages/AIAdvisor";
 export default function App() {
   return (
     <Routes>
@@ -37,6 +39,8 @@ export default function App() {
         <Route path="suppliers" element={<Suppliers />} />
         <Route path="purchases" element={<Purchases />} />
         <Route path="expenses" element={<Expenses />} />
+        <Route path="reports" element={<Reports />} />
+        <Route path="ai" element={<AIAdvisor />} />
       </Route>
     </Routes>
   );
