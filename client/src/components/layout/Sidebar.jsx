@@ -74,14 +74,14 @@ const navItems = [
     to: "/dashboard/reports",
     icon: FileText,
     label: "Reports",
-    enabled: false,
+    enabled: true,
   },
-  { to: "/dashboard/ai", icon: Sparkles, label: "AI Advisor", enabled: false },
+  { to: "/dashboard/ai", icon: Sparkles, label: "AI Advisor", enabled: true },
   {
     to: "/dashboard/settings",
     icon: Settings,
     label: "Settings",
-    enabled: false,
+    enabled: true,
   },
 ];
 
