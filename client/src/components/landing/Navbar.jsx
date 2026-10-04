@@ -8,8 +8,12 @@ export default function Navbar() {
     <header className="absolute top-0 left-0 right-0 z-20">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-10">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-gold-500 to-forest-700">
-            <span className="text-lg font-bold text-white">E</span>
+          <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-gold-500 to-forest-700">
+            <img
+              src="/logo.jpg"
+              alt="EthioFlow"
+              className="h-full w-full object-cover"
+            />
           </div>
           <div className="text-left leading-tight">
             <p className="text-lg font-bold text-white">
