@@ -160,3 +160,99 @@ export async function getInventoryValue(businessId) {
   const products = await Product.find({ business: businessId, isActive: true });
   return products.reduce((sum, p) => sum + p.costPrice * p.currentStock, 0);
 }
+import Customer from "../models/Customer.js";
+
+// --- Date helpers for period comparisons ---
+export function startOfThisMonth() {
+  const d = new Date();
+  d.setDate(1);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+export function startOfLastMonth() {
+  const d = startOfThisMonth();
+  d.setMonth(d.getMonth() - 1);
+  return d;
+}
+
+export function endOfLastMonth() {
+  const d = startOfThisMonth();
+  d.setMilliseconds(-1); // one millisecond before this month started
+  return d;
+}
+
+// How much NEW credit was handed out to customers in a given window —
+// a rising number here means more sales are going unpaid, not necessarily lost,
+// but it explains why cash and "paper profit" can tell different stories.
+export async function getCustomerCreditIssued(businessId, from, to) {
+  const match = { business: new mongoose.Types.ObjectId(businessId) };
+
+  const [result] = await Customer.aggregate([
+    { $match: match },
+    { $unwind: "$ledger" },
+    {
+      $match: {
+        "ledger.type": "purchase",
+        "ledger.date": {
+          $gte: new Date(from),
+          ...(to ? { $lte: new Date(to) } : {}),
+        },
+      },
+    },
+    { $group: { _id: null, totalCreditIssued: { $sum: "$ledger.amount" } } },
+  ]);
+
+  return result?.totalCreditIssued || 0;
+}
+
+// Compares this month against last month across every number that can explain a profit change
+export async function getPeriodComparison(businessId) {
+  const thisStart = startOfThisMonth();
+  const lastStart = startOfLastMonth();
+  const lastEnd = endOfLastMonth();
+
+  const [
+    thisMonth,
+    lastMonth,
+    expensesThis,
+    expensesLast,
+    creditThis,
+    creditLast,
+    lowStock,
+  ] = await Promise.all([
+    getFinancialSummary(businessId, thisStart),
+    getFinancialSummary(businessId, lastStart, lastEnd),
+    getExpensesByCategory(businessId, thisStart),
+    getExpensesByCategory(businessId, lastStart, lastEnd),
+    getCustomerCreditIssued(businessId, thisStart),
+    getCustomerCreditIssued(businessId, lastStart, lastEnd),
+    Product.find({
+      business: businessId,
+      isActive: true,
+      currentStock: 0,
+    }).select("name"),
+  ]);
+
+  return {
+    thisMonth: {
+      revenue: thisMonth.revenue,
+      cogs: thisMonth.cogs,
+      netProfit: thisMonth.netProfit,
+      operatingExpenses: thisMonth.operatingExpenses,
+    },
+    lastMonth: {
+      revenue: lastMonth.revenue,
+      cogs: lastMonth.cogs,
+      netProfit: lastMonth.netProfit,
+      operatingExpenses: lastMonth.operatingExpenses,
+    },
+    profitChange: thisMonth.netProfit - lastMonth.netProfit,
+    revenueChange: thisMonth.revenue - lastMonth.revenue,
+    expensesByCategoryThisMonth: expensesThis,
+    expensesByCategoryLastMonth: expensesLast,
+    customerCreditIssuedThisMonth: creditThis,
+    customerCreditIssuedLastMonth: creditLast,
+    currentlyOutOfStock: lowStock.map((p) => p.name),
+  };
+}
