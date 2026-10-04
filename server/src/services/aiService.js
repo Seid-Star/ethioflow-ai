@@ -5,13 +5,21 @@ import Expense from "../models/Expense.js";
 import {
   getFinancialSummary,
   getInventoryValue,
+  getPeriodComparison,
 } from "./businessDataService.js";
 
 const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-// --- Step 1: Intent Detection (keyword-based, matches the spec's "Intent Detection" box) ---
+
+// --- Step 1: Intent Detection ---
 function detectIntent(question) {
   const q = question.toLowerCase();
 
+  if (
+    /why.*profit|profit decrease|revenue decrease|why.*revenue|compare.*month/.test(
+      q,
+    )
+  )
+    return "PROFIT_COMPARISON";
   if (/sales today|today'?s sales|how much.*sell.*today|sold today/.test(q))
     return "TODAY_SALES";
   if (/who owes|outstanding|overdue|owing me|debt/.test(q))
@@ -39,9 +47,13 @@ function startOfMonth() {
   return d;
 }
 
-// --- Step 2: Business Data Service — fetch ONLY the real numbers each intent needs ---
+// --- Step 2: Business Data Service ---
 async function gatherData(intent, businessId) {
   switch (intent) {
+    case "PROFIT_COMPARISON": {
+      return await getPeriodComparison(businessId);
+    }
+
     case "TODAY_SALES": {
       const summary = await getFinancialSummary(businessId, startOfToday());
       return { revenue: summary.revenue, saleCount: summary.saleCount };
@@ -115,13 +127,17 @@ async function gatherData(intent, businessId) {
   }
 }
 
+// --- Step 3: LLM composes the natural-language response, with retry on temporary overload ---
 async function composeAnswer(question, intent, data) {
   const systemPrompt = `You are EthioFlow AI, a business advisor for an Ethiopian small shop owner.
 Rules:
 - ONLY use the numbers given to you in the DATA block below. Never invent, estimate, or guess any figure.
 - Currency is always ETB.
-- Keep the answer to 2-4 short sentences, friendly and plain-language, like talking to a shop owner, not an accountant.
-- If the data shows a problem (debt, low stock, low profit), end with one short, concrete recommendation.
+- Give a complete, useful answer: state the direct answer first, then back it up with the specific numbers from DATA, then end with one clear, concrete recommendation.
+- Write 4-6 sentences. Do not cut the answer short — finish every thought completely.
+- If DATA includes a list (debtors, low-stock products, expense categories), mention the top 2-3 by name with their numbers, not just a vague summary.
+- If DATA contains "thisMonth" and "lastMonth": if lastMonth's revenue AND netProfit are both exactly 0, say plainly that there isn't enough data from last month yet to make a real comparison, briefly state this month's actual numbers instead, and stop there — do not calculate a "decrease" against an empty baseline. Otherwise, name the specific drivers: compare expense categories between the two periods and name which one grew most, compare customerCreditIssued between the two periods, and mention currentlyOutOfStock products only as a present-tense fact ("X is currently out of stock"), never claim it was out of stock last month unless the data says so.
+- Get straight to the point. No preamble like "Sure, let me check" or "Based on the data provided".
 - Do not mention "intent detection", "database", or anything technical.`;
 
   const userPrompt = `Owner's question: "${question}"
@@ -129,19 +145,38 @@ Detected intent: ${intent}
 DATA (the only facts you may use):
 ${JSON.stringify(data, null, 2)}`;
 
-  const response = await genAI.models.generateContent({
-    model: "gemini-flash-latest",
-    contents: userPrompt,
-    config: {
-      systemInstruction: systemPrompt,
-      maxOutputTokens: 300,
-    },
-  });
+  const maxAttempts = 3;
 
-  return response.text;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const response = await genAI.models.generateContent({
+        model: "gemini-flash-latest",
+        contents: userPrompt,
+        config: {
+          systemInstruction: systemPrompt,
+          maxOutputTokens: 800,
+          temperature: 0.4,
+        },
+      });
+      return response.text;
+    } catch (err) {
+      const isOverloaded = err?.status === 503;
+      const isLastAttempt = attempt === maxAttempts;
+
+      if (isOverloaded && !isLastAttempt) {
+        console.warn(
+          `⚠ Gemini overloaded (attempt ${attempt}/${maxAttempts}), retrying...`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+        continue;
+      }
+
+      throw err;
+    }
+  }
 }
 
-// --- The full pipeline, called by the controller ---
+// --- The full pipeline ---
 export async function answerQuestion(businessId, question) {
   const intent = detectIntent(question);
   const data = await gatherData(intent, businessId);
