@@ -6,8 +6,129 @@ import { connectDB } from "../config/db.js";
 import Business from "../models/Business.js";
 import User from "../models/User.js";
 import Product from "../models/Product.js";
-
+import Sale from "../models/Sale.js";
+import InventoryMovement from "../models/InventoryMovement.js";
+import Customer from "../models/Customer.js";
+import Expense from "../models/Expense.js";
 const DEMO_EMAIL = "abebe@demo.ethioflow.ai";
+async function generateSalesHistory(business, owner, products) {
+  console.log("💰 Generating 30 days of sale history...");
+
+  const productMap = {};
+  for (const p of products) productMap[p.name] = p;
+
+  const customer = await Customer.create({
+    business: business._id,
+    name: "Hana Tesfaye",
+    phone: "0922111111",
+  });
+
+  const today = new Date();
+
+  for (let daysBack = 29; daysBack >= 0; daysBack--) {
+    const saleDate = new Date(today);
+    saleDate.setDate(saleDate.getDate() - daysBack);
+
+    // 1-3 sales per day, skip some days entirely for realism
+    const salesToday = Math.random() > 0.15 ? Math.ceil(Math.random() * 3) : 0;
+
+    for (let s = 0; s < salesToday; s++) {
+      const itemCount = 1 + Math.floor(Math.random() * 2);
+      const chosenProducts = Object.values(productMap)
+        .sort(() => 0.5 - Math.random())
+        .slice(0, itemCount);
+
+      const saleItems = [];
+      let subtotal = 0;
+
+      for (const product of chosenProducts) {
+        const freshProduct = await Product.findById(product._id);
+        const quantity = 1 + Math.floor(Math.random() * 3);
+        if (freshProduct.currentStock < quantity) continue;
+
+        const previousStock = freshProduct.currentStock;
+        freshProduct.currentStock -= quantity;
+        await freshProduct.save();
+
+        await InventoryMovement.create({
+          business: business._id,
+          product: freshProduct._id,
+          type: "sale",
+          previousStock,
+          change: -quantity,
+          newStock: freshProduct.currentStock,
+          reason: "POS sale",
+          performedBy: owner._id,
+          createdAt: saleDate,
+        });
+
+        const lineTotal = freshProduct.sellingPrice * quantity;
+        subtotal += lineTotal;
+        saleItems.push({
+          product: freshProduct._id,
+          name: freshProduct.name,
+          quantity,
+          unitPrice: freshProduct.sellingPrice,
+          costPriceAtSale: freshProduct.costPrice,
+          lineTotal,
+        });
+      }
+
+      if (saleItems.length === 0) continue;
+
+      const useCreditSale = Math.random() > 0.8;
+      const total = subtotal;
+
+      const sale = await Sale.create({
+        business: business._id,
+        cashier: owner._id,
+        customer: useCreditSale ? customer._id : undefined,
+        items: saleItems,
+        subtotal,
+        discount: 0,
+        tax: 0,
+        total,
+        payments: [
+          { method: useCreditSale ? "customer_credit" : "cash", amount: total },
+        ],
+        paymentMethod: useCreditSale ? "customer_credit" : "cash",
+        amountPaid: total,
+        createdAt: saleDate,
+      });
+
+      if (useCreditSale) {
+        customer.recordEntry({
+          type: "purchase",
+          amount: total,
+          note: "POS sale",
+          relatedSale: sale._id,
+        });
+        await customer.save();
+      }
+
+      // Backdate createdAt manually since Mongoose timestamps override it on create
+      await Sale.updateOne({ _id: sale._id }, { createdAt: saleDate });
+    }
+
+    // One expense every ~5 days
+    if (daysBack % 5 === 0) {
+      const categories = ["Rent", "Electricity", "Transport", "Internet"];
+      const category =
+        categories[Math.floor(Math.random() * categories.length)];
+      const amount =
+        category === "Rent" ? 5000 : 300 + Math.floor(Math.random() * 1000);
+      await Expense.create({
+        business: business._id,
+        category,
+        amount,
+        date: saleDate,
+        recordedBy: owner._id,
+      });
+    }
+  }
+
+  console.log("✅ Sales history generated");
+}
 
 async function seed() {
   await connectDB();
@@ -15,6 +136,10 @@ async function seed() {
   console.log("🧹 Clearing previous demo data...");
   const existingUser = await User.findOne({ email: DEMO_EMAIL });
   if (existingUser) {
+    await Sale.deleteMany({ business: existingUser.business });
+    await InventoryMovement.deleteMany({ business: existingUser.business });
+    await Customer.deleteMany({ business: existingUser.business });
+    await Expense.deleteMany({ business: existingUser.business });
     await Product.deleteMany({ business: existingUser.business });
     await User.deleteOne({ _id: existingUser._id });
     await Business.deleteOne({ _id: existingUser.business });
@@ -97,9 +222,11 @@ async function seed() {
     },
   ];
 
-  await Product.insertMany(
+  const createdProducts = await Product.insertMany(
     products.map((p) => ({ ...p, business: business._id })),
   );
+
+  await generateSalesHistory(business, owner, createdProducts);
 
   console.log("\n✅ Demo data ready!");
   console.log(`   Business: ${business.name}`);
