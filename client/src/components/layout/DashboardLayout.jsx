@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
+import SyncManager from "./SyncManager";
 
 export default function DashboardLayout() {
   return (
@@ -12,6 +13,7 @@ export default function DashboardLayout() {
           <Outlet />
         </main>
       </div>
+      <SyncManager />
     </div>
   );
 }
