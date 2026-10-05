@@ -14,7 +14,7 @@ import {
 import { useAuthStore } from "../store/authStore";
 import { api } from "../api/axios";
 import StatCard from "../components/ui/StatCard";
-
+import ForecastCard from "../components/ui/ForecastCard";
 const PIE_COLORS = [
   "#135241",
   "#f5b83d",
@@ -43,22 +43,25 @@ export default function Dashboard() {
   const [today, setToday] = useState(null);
   const [dailySales, setDailySales] = useState([]);
   const [expenseBreakdown, setExpenseBreakdown] = useState([]);
+  const [forecasts, setForecasts] = useState([]);
   const [lowStockCount, setLowStockCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadAll() {
-      const [todayRes, trendRes, expenseRes, productsRes] = await Promise.all([
-        api.get("/reports/financial-summary", {
-          params: { from: startOfToday() },
-        }),
-        api.get("/reports/daily-sales", { params: { from: daysAgo(13) } }),
-        api.get("/reports/expenses-by-category", {
-          params: { from: daysAgo(29) },
-        }),
-        api.get("/products"),
-      ]);
-
+      const [todayRes, trendRes, expenseRes, productsRes, forecastRes] =
+        await Promise.all([
+          api.get("/reports/financial-summary", {
+            params: { from: startOfToday() },
+          }),
+          api.get("/reports/daily-sales", { params: { from: daysAgo(13) } }),
+          api.get("/reports/expenses-by-category", {
+            params: { from: daysAgo(29) },
+          }),
+          api.get("/products"),
+          api.get("/inventory/forecast"),
+        ]);
+      setForecasts(forecastRes.data.filter((f) => f.status !== "ok"));
       setToday(todayRes.data);
       setDailySales(
         trendRes.data.map((d) => ({
@@ -124,15 +127,16 @@ export default function Dashboard() {
         />
       </div>
 
-      {!loading && lowStockCount > 0 && (
-        <div className="mb-8 rounded-2xl border border-red-100 bg-red-50 p-4">
-          <p className="text-sm font-medium text-red-700">
-            ⚠ {lowStockCount} product{lowStockCount > 1 ? "s are" : " is"} at or
-            below minimum stock.
+      {!loading && forecasts.length > 0 && (
+        <div className="mb-8">
+          <p className="mb-3 text-sm font-semibold text-forest-950">
+            Restock Alerts
           </p>
-          <p className="text-xs text-red-600/70">
-            Check the Inventory page to restock.
-          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {forecasts.map((f) => (
+              <ForecastCard key={f.productId} forecast={f} />
+            ))}
+          </div>
         </div>
       )}
 
