@@ -2,6 +2,13 @@ import asyncHandler from "express-async-handler";
 import mongoose from "mongoose";
 import Product from "../models/Product.js";
 import InventoryMovement from "../models/InventoryMovement.js";
+import { getAllForecasts } from "../services/forecastService.js";
+
+// GET /api/inventory/forecast
+export const getForecast = asyncHandler(async (req, res) => {
+  const forecasts = await getAllForecasts(req.auth.business);
+  res.json(forecasts);
+});
 
 // GET /api/inventory/movements — full history, newest first
 export const getMovements = asyncHandler(async (req, res) => {
