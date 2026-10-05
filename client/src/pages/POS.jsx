@@ -8,9 +8,16 @@ import {
   Split,
   X,
   UserCircle2,
+  CloudOff,
 } from "lucide-react";
 import { api } from "../api/axios";
 import { useCartStore } from "../store/cartStore";
+import { useOnlineStatus } from "../offline/useOnlineStatus";
+import {
+  cacheProducts,
+  getCachedProducts,
+  savePendingSale,
+} from "../offline/db";
 
 const baseMethods = [
   { value: "cash", label: "Cash" },
@@ -20,6 +27,7 @@ const baseMethods = [
 ];
 
 export default function POS() {
+  const isOnline = useOnlineStatus();
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [customerId, setCustomerId] = useState("");
@@ -45,10 +53,36 @@ export default function POS() {
     subtotal,
   } = useCartStore();
 
+  // Load products: from the server (and refresh the offline cache) when online,
+  // from the offline cache directly when not.
   useEffect(() => {
-    api.get("/products").then(({ data }) => setProducts(data));
-    api.get("/customers").then(({ data }) => setCustomers(data));
-  }, []);
+    async function loadProducts() {
+      if (isOnline) {
+        try {
+          const { data } = await api.get("/products");
+          setProducts(data);
+          cacheProducts(data); // keep the offline copy fresh for next time connection drops
+        } catch {
+          const cached = await getCachedProducts();
+          setProducts(cached);
+        }
+      } else {
+        const cached = await getCachedProducts();
+        setProducts(cached);
+      }
+    }
+    loadProducts();
+  }, [isOnline]);
+
+  // Customer Credit requires knowing live balances, so it's online-only for now (Day 23 note below)
+  useEffect(() => {
+    if (isOnline) {
+      api.get("/customers").then(({ data }) => setCustomers(data));
+    } else {
+      setCustomers([]);
+      setCustomerId("");
+    }
+  }, [isOnline]);
 
   const filtered = products.filter(
     (p) =>
@@ -58,9 +92,10 @@ export default function POS() {
 
   const sub = subtotal();
   const total = Math.max(0, sub - Number(discount) + Number(tax));
-  const methods = customerId
-    ? [...baseMethods, { value: "customer_credit", label: "Customer Credit" }]
-    : baseMethods;
+  const methods =
+    customerId && isOnline
+      ? [...baseMethods, { value: "customer_credit", label: "Customer Credit" }]
+      : baseMethods;
 
   const splitSum = splitLines.reduce((s, l) => s + (Number(l.amount) || 0), 0);
   const splitRemaining = Math.round((total - splitSum) * 100) / 100;
@@ -70,24 +105,12 @@ export default function POS() {
       lines.map((l, i) => (i === index ? { ...l, [key]: value } : l)),
     );
   }
-
   function addSplitLine() {
     setSplitLines((lines) => [...lines, { method: "cash", amount: "" }]);
   }
-
   function removeSplitLine(index) {
     setSplitLines((lines) => lines.filter((_, i) => i !== index));
   }
-
-  // If the customer is cleared, strip any credit lines from the split so checkout can't silently break
-  useEffect(() => {
-    if (!customerId) {
-      setSplitLines((lines) =>
-        lines.filter((l) => l.method !== "customer_credit"),
-      );
-      if (singleMethod === "customer_credit") setSingleMethod("cash");
-    }
-  }, [customerId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleCheckout() {
     if (items.length === 0) return;
@@ -100,6 +123,37 @@ export default function POS() {
       : [{ method: singleMethod, amount: total }];
 
     setSubmitting(true);
+
+    if (!isOnline) {
+      // --- OFFLINE PATH: save to IndexedDB, never touch the network ---
+      const offlineSale = {
+        offlineTransactionId: crypto.randomUUID(),
+        items: items.map((i) => ({
+          productId: i.productId,
+          name: i.name,
+          quantity: i.qty,
+          unitPrice: i.price,
+        })),
+        discount: Number(discount) || 0,
+        tax: Number(tax) || 0,
+        subtotal: sub,
+        total,
+        payments,
+        createdAtLocal: new Date().toISOString(),
+      };
+      await savePendingSale(offlineSale);
+
+      setReceipt({ ...offlineSale, isOffline: true });
+      clear();
+      setDiscount(0);
+      setTax(0);
+      setIsSplit(false);
+      setSplitLines([{ method: "cash", amount: "" }]);
+      setSubmitting(false);
+      return;
+    }
+
+    // --- ONLINE PATH: same as before ---
     try {
       const { data } = await api.post("/sales", {
         items: items.map((i) => ({ productId: i.productId, quantity: i.qty })),
@@ -118,6 +172,7 @@ export default function POS() {
       const [{ data: freshProducts }, { data: freshCustomers }] =
         await Promise.all([api.get("/products"), api.get("/customers")]);
       setProducts(freshProducts);
+      cacheProducts(freshProducts);
       setCustomers(freshCustomers);
     } catch (err) {
       setError(err?.response?.data?.message || "Checkout failed");
@@ -137,8 +192,15 @@ export default function POS() {
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      {/* Product search + grid */}
       <div className="lg:col-span-2">
+        {!isOnline && (
+          <div className="mb-4 flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <CloudOff size={16} />
+            You're offline. Sales will be saved on this device and synced
+            automatically once you're back online.
+          </div>
+        )}
+
         <div className="mb-4 flex items-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-2.5">
           <Search size={18} className="text-ink-900/40" />
           <input
@@ -177,13 +239,11 @@ export default function POS() {
         </div>
       </div>
 
-      {/* Cart panel */}
       <div className="rounded-2xl border border-black/5 bg-white p-5">
         <h2 className="mb-4 text-sm font-semibold text-forest-950">
           Current Sale
         </h2>
 
-        {/* Customer picker */}
         <div className="mb-4">
           <label className="mb-1 flex items-center gap-1.5 text-xs font-medium text-ink-900/70">
             <UserCircle2 size={14} /> Customer (optional)
@@ -191,7 +251,8 @@ export default function POS() {
           <select
             value={customerId}
             onChange={(e) => setCustomerId(e.target.value)}
-            className="w-full rounded-lg border border-black/10 px-3 py-2 text-sm outline-none focus:border-forest-700"
+            disabled={!isOnline}
+            className="w-full rounded-lg border border-black/10 px-3 py-2 text-sm outline-none focus:border-forest-700 disabled:bg-black/5 disabled:text-ink-900/40"
           >
             <option value="">Walk-in customer</option>
             {customers.map((c) => (
@@ -200,9 +261,10 @@ export default function POS() {
               </option>
             ))}
           </select>
-          {!customerId && (
+          {!isOnline && (
             <p className="mt-1 text-[11px] text-ink-900/40">
-              Select a customer to unlock Customer Credit
+              Customer Credit needs a connection — cash/mobile money only while
+              offline
             </p>
           )}
         </div>
@@ -283,7 +345,6 @@ export default function POS() {
           </div>
         </div>
 
-        {/* Payment section */}
         <div className="mb-4">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-xs font-medium text-ink-900/70">Payment</p>
@@ -382,8 +443,12 @@ export default function POS() {
           disabled={!canCharge}
           className="flex w-full items-center justify-center gap-2 rounded-full bg-gold-500 py-3 text-sm font-semibold text-forest-950 hover:bg-gold-600 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          <CheckCircle2 size={16} />
-          {submitting ? "Processing..." : `Charge ${total.toFixed(2)} ETB`}
+          {isOnline ? <CheckCircle2 size={16} /> : <CloudOff size={16} />}
+          {submitting
+            ? "Processing..."
+            : isOnline
+              ? `Charge ${total.toFixed(2)} ETB`
+              : `Save Offline — ${total.toFixed(2)} ETB`}
         </button>
       </div>
     </div>
@@ -393,18 +458,32 @@ export default function POS() {
 function Receipt({ sale, onNewSale }) {
   return (
     <div className="mx-auto max-w-sm rounded-2xl border border-black/5 bg-white p-6 text-center">
-      <CheckCircle2 size={48} className="mx-auto mb-3 text-emerald-500" />
-      <p className="mb-1 text-lg font-bold text-forest-950">
-        Payment Successful
-      </p>
-      {sale.customer && (
-        <p className="mb-1 text-sm text-forest-700">
-          Customer: {sale.customer.name}
-        </p>
+      {sale.isOffline ? (
+        <>
+          <CloudOff size={48} className="mx-auto mb-3 text-amber-500" />
+          <p className="mb-1 text-lg font-bold text-forest-950">
+            Saved Offline
+          </p>
+          <p className="mb-6 text-sm text-ink-900/50">
+            This sale will sync automatically once you're back online.
+          </p>
+        </>
+      ) : (
+        <>
+          <CheckCircle2 size={48} className="mx-auto mb-3 text-emerald-500" />
+          <p className="mb-1 text-lg font-bold text-forest-950">
+            Payment Successful
+          </p>
+          {sale.customer && (
+            <p className="mb-1 text-sm text-forest-700">
+              Customer: {sale.customer.name}
+            </p>
+          )}
+          <p className="mb-6 text-sm text-ink-900/50">
+            {new Date(sale.createdAt).toLocaleString()}
+          </p>
+        </>
       )}
-      <p className="mb-6 text-sm text-ink-900/50">
-        {new Date(sale.createdAt).toLocaleString()}
-      </p>
 
       <div className="mb-4 space-y-2 border-y border-dashed border-black/10 py-4 text-left text-sm">
         {sale.items.map((item, i) => (
@@ -412,7 +491,10 @@ function Receipt({ sale, onNewSale }) {
             <span>
               {item.name} × {item.quantity}
             </span>
-            <span>{item.lineTotal.toFixed(2)} ETB</span>
+            <span>
+              {(item.lineTotal ?? item.unitPrice * item.quantity).toFixed(2)}{" "}
+              ETB
+            </span>
           </div>
         ))}
       </div>
