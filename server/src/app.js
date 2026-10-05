@@ -14,6 +14,7 @@ import purchaseRoutes from "./routes/purchaseRoutes.js";
 import expenseRoutes from "./routes/expenseRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
+import syncRoutes from "./routes/syncRoutes.js";
 const app = express();
 
 app.use(
@@ -25,6 +26,7 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));
+app.use("/api/sync", syncRoutes);
 
 // Health check: proves the server is alive
 app.get("/api/health", (req, res) => {
