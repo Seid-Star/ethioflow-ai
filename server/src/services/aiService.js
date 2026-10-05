@@ -7,7 +7,7 @@ import {
   getInventoryValue,
   getPeriodComparison,
 } from "./businessDataService.js";
-
+import { getAllForecasts } from "./forecastService.js";
 const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // --- Step 1: Intent Detection ---
@@ -79,18 +79,14 @@ async function gatherData(intent, businessId) {
     }
 
     case "RESTOCK": {
-      const lowStock = await Product.find({
-        business: businessId,
-        isActive: true,
-        $expr: { $lte: ["$currentStock", "$minStock"] },
-      }).select("name currentStock minStock");
-      return {
-        lowStockProducts: lowStock.map((p) => ({
-          name: p.name,
-          stock: p.currentStock,
-          minStock: p.minStock,
-        })),
-      };
+      const forecasts = await getAllForecasts(businessId);
+      const needsAttention = forecasts.filter(
+        (f) =>
+          f.status === "critical" ||
+          f.status === "warning" ||
+          f.status === "low_stock_no_velocity",
+      );
+      return { restockForecasts: needsAttention };
     }
 
     case "BIGGEST_EXPENSES": {
