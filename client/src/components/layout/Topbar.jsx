@@ -1,19 +1,28 @@
-import { LogOut } from "lucide-react";
+import { LogOut, WifiOff } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
+import { useOnlineStatus } from "../../offline/useOnlineStatus";
 
 export default function Topbar() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const isOnline = useOnlineStatus();
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-black/5 bg-white px-6">
-      <p className="text-sm text-ink-900/60">
-        {new Date().toLocaleDateString("en-US", {
-          weekday: "long",
-          month: "long",
-          day: "numeric",
-        })}
-      </p>
+      <div className="flex items-center gap-3">
+        <p className="text-sm text-ink-900/60">
+          {new Date().toLocaleDateString("en-US", {
+            weekday: "long",
+            month: "long",
+            day: "numeric",
+          })}
+        </p>
+        {!isOnline && (
+          <span className="flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
+            <WifiOff size={12} /> Offline — sales are being saved on this device
+          </span>
+        )}
+      </div>
 
       <div className="flex items-center gap-4">
         <div className="text-right leading-tight">
