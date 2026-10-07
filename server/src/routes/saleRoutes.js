@@ -5,11 +5,18 @@ import {
   getSales,
   getSale,
 } from "../controllers/saleController.js";
-
+import { validateSaleCheckout } from "../validators/index.js";
+import { validate } from "../middleware/validate.js";
 const router = Router();
 
 router.use(protect);
-
+router.post(
+  "/",
+  authorize("owner", "manager", "cashier"),
+  validateSaleCheckout,
+  validate,
+  createSale,
+);
 router.post("/", authorize("owner", "manager", "cashier"), createSale);
 router.get("/", getSales);
 router.get("/:id", getSale);
