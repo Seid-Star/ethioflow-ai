@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Plus, X } from "lucide-react";
 import { api } from "../api/axios";
 import Modal from "../components/ui/Modal";
+import { Camera, Sparkles } from "lucide-react";
 
 export default function Purchases() {
   const [purchases, setPurchases] = useState([]);
@@ -10,6 +11,8 @@ export default function Purchases() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [supplierId, setSupplierId] = useState("");
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState("");
   const [lines, setLines] = useState([
     { productId: "", quantity: "", costPrice: "" },
   ]);
@@ -51,6 +54,58 @@ export default function Purchases() {
     (sum, l) => sum + (Number(l.quantity) || 0) * (Number(l.costPrice) || 0),
     0,
   );
+  async function handleReceiptUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setScanning(true);
+    setScanError("");
+
+    const formData = new FormData();
+    formData.append("receipt", file);
+
+    try {
+      const { data } = await api.post("/ocr/scan-receipt", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      // Try to match the extracted supplier name to an existing one; otherwise leave blank for the owner to pick
+      const matchedSupplier = suppliers.find(
+        (s) =>
+          data.supplierName &&
+          s.name.toLowerCase() === data.supplierName.toLowerCase(),
+      );
+      if (matchedSupplier) setSupplierId(matchedSupplier._id);
+
+      // Try to match each extracted item name to an existing product
+      const matchedLines = data.items.map((item) => {
+        const matchedProduct = products.find(
+          (p) => p.name.toLowerCase() === item.name.toLowerCase(),
+        );
+        return {
+          productId: matchedProduct?._id || "",
+          quantity: item.quantity || "",
+          costPrice: item.unitPrice || "",
+          extractedName: item.name, // shown if no product matched, so the owner isn't left guessing
+        };
+      });
+      setLines(
+        matchedLines.length > 0
+          ? matchedLines
+          : [{ productId: "", quantity: "", costPrice: "" }],
+      );
+
+      setModalOpen(true); // open the normal Record Purchase modal, now pre-filled for review
+    } catch (err) {
+      setScanError(
+        err?.response?.data?.message ||
+          "Could not read the receipt. Try again with a clearer photo.",
+      );
+    } finally {
+      setScanning(false);
+      e.target.value = ""; // allow re-selecting the same file if retrying
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -79,6 +134,17 @@ export default function Purchases() {
 
   return (
     <div>
+      {scanning && (
+        <div className="mb-4 flex items-center gap-2 rounded-xl bg-forest-50 px-4 py-3 text-sm text-forest-800">
+          <Sparkles size={16} className="animate-pulse" /> Reading your
+          receipt...
+        </div>
+      )}
+      {scanError && (
+        <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+          {scanError}
+        </p>
+      )}
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-forest-950">Purchases</h1>
@@ -86,15 +152,27 @@ export default function Purchases() {
             Order → Receive Stock → Balance → Payment
           </p>
         </div>
-        <button
-          onClick={() => setModalOpen(true)}
-          className="flex items-center gap-2 rounded-full bg-gold-500 px-5 py-2.5 text-sm font-semibold text-forest-950 hover:bg-gold-600"
-        >
-          <Plus size={16} /> Record Purchase
-        </button>
+        <div className="flex gap-2">
+          <label className="flex cursor-pointer items-center gap-2 rounded-full border border-black/10 px-4 py-2.5 text-sm font-medium text-forest-950 hover:bg-black/5">
+            <Camera size={16} /> Scan Receipt
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleReceiptUpload}
+              className="hidden"
+            />
+          </label>
+          <button
+            onClick={() => setModalOpen(true)}
+            className="flex items-center gap-2 rounded-full bg-gold-500 px-5 py-2.5 text-sm font-semibold text-forest-950 hover:bg-gold-600"
+          >
+            <Plus size={16} /> Record Purchase
+          </button>
+        </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-black/5 bg-white">
+      <div className="overflow-x-auto rounded-2xl border border-black/5 bg-white">
         {loading ? (
           <p className="p-6 text-sm text-ink-900/50">Loading...</p>
         ) : purchases.length === 0 ? (
@@ -102,7 +180,7 @@ export default function Purchases() {
             No purchases recorded yet.
           </p>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <thead className="bg-forest-50 text-left text-xs uppercase text-ink-900/50">
               <tr>
                 <th className="px-5 py-3">Supplier</th>
@@ -199,6 +277,14 @@ export default function Purchases() {
                     </option>
                   ))}
                 </select>
+                {!line.productId && line.extractedName && (
+                  <span
+                    className="text-[10px] text-amber-600"
+                    title={`OCR read: "${line.extractedName}" — no matching product found`}
+                  >
+                    ⚠ "{line.extractedName}"
+                  </span>
+                )}
                 <input
                   type="number"
                   min="1"
