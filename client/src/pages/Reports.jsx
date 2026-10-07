@@ -114,7 +114,7 @@ export default function Reports() {
           </div>
         )}
 
-      <div className="overflow-hidden rounded-2xl border border-black/5 bg-white">
+      <div className="overflow-x-auto rounded-2xl border border-black/5 bg-white">
         {loading ? (
           <p className="p-6 text-sm text-ink-900/50">Loading...</p>
         ) : activeTab === "financial" ? (
