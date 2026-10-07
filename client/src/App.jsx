@@ -15,33 +15,42 @@ import Purchases from "./pages/Purchases";
 import Expenses from "./pages/Expenses";
 import Reports from "./pages/Reports";
 import AIAdvisor from "./pages/AIAdvisor";
+import NotFound from "./pages/NotFound";
+import ErrorBoundary from "./components/ErrorBoundary";
+import Finance from "./pages/Finance";
+import Settings from "./pages/Settings";
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Landing />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+    <ErrorBoundary>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <DashboardLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<Dashboard />} />
-        <Route path="products" element={<Products />} />
-        <Route path="inventory" element={<Inventory />} />
-        <Route path="pos" element={<POS />} />
-        <Route path="customers" element={<Customers />} />
-        <Route path="customers/:id" element={<CustomerProfile />} />
-        <Route path="suppliers" element={<Suppliers />} />
-        <Route path="purchases" element={<Purchases />} />
-        <Route path="expenses" element={<Expenses />} />
-        <Route path="reports" element={<Reports />} />
-        <Route path="ai" element={<AIAdvisor />} />
-      </Route>
-    </Routes>
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Dashboard />} />
+          <Route path="products" element={<Products />} />
+          <Route path="inventory" element={<Inventory />} />
+          <Route path="pos" element={<POS />} />
+          <Route path="customers" element={<Customers />} />
+          <Route path="customers/:id" element={<CustomerProfile />} />
+          <Route path="suppliers" element={<Suppliers />} />
+          <Route path="purchases" element={<Purchases />} />
+          <Route path="expenses" element={<Expenses />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="ai" element={<AIAdvisor />} />
+          <Route path="finance" element={<Finance />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </ErrorBoundary>
   );
 }
