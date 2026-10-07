@@ -106,7 +106,7 @@ export default function Products() {
         </button>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-black/5 bg-white">
+      <div className="overflow-x-auto rounded-2xl border border-black/5 bg-white">
         {loading ? (
           <p className="p-6 text-sm text-ink-900/50">Loading...</p>
         ) : products.length === 0 ? (
@@ -114,7 +114,7 @@ export default function Products() {
             No products yet. Add your first one.
           </p>
         ) : (
-          <table className="w-full text-sm">
+            <table className="w-full min-w-[640px] text-sm">
             <thead className="bg-forest-50 text-left text-xs uppercase text-ink-900/50">
               <tr>
                 <th className="px-5 py-3">Name</th>
