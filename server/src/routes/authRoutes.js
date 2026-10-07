@@ -8,6 +8,8 @@ import {
   me,
 } from "../controllers/authController.js";
 import { protect } from "../middleware/auth.js";
+import { validateRegister, validateLogin } from "../validators/index.js";
+import { validate } from "../middleware/validate.js";
 
 const router = Router();
 
@@ -23,5 +25,7 @@ router.post("/login", authLimiter, login);
 router.post("/refresh", refresh);
 router.post("/logout", logout);
 router.get("/me", protect, me);
+router.post("/register", authLimiter, validateRegister, validate, register);
+router.post("/login", authLimiter, validateLogin, validate, login);
 
 export default router;
