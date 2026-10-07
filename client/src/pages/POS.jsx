@@ -191,7 +191,7 @@ export default function POS() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
       <div className="lg:col-span-2">
         {!isOnline && (
           <div className="mb-4 flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
