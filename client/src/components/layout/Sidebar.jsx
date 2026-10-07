@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { UsersRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   LayoutDashboard,
@@ -27,6 +28,12 @@ const navItems = [
   { to: "/dashboard/products", icon: Package, key: "products", enabled: true },
   { to: "/dashboard/inventory", icon: Boxes, key: "inventory", enabled: true },
   { to: "/dashboard/customers", icon: Users, key: "customers", enabled: true },
+  {
+    to: "/dashboard/employees",
+    icon: UsersRound,
+    key: "employees",
+    enabled: true,
+  },
   { to: "/dashboard/suppliers", icon: Truck, key: "suppliers", enabled: true },
   {
     to: "/dashboard/purchases",
@@ -52,14 +59,16 @@ export default function Sidebar() {
   return (
     <aside className="flex h-screen w-64 shrink-0 flex-col bg-forest-950 text-white">
       <div className="flex items-center gap-3 px-5 py-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-gold-500 to-forest-700">
-          <span className="text-base font-bold text-white">E</span>
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-gold-500 to-forest-700">
+          <span className="text-lg font-bold text-white">
+            <img src="\public\logo.jpg"></img>
+          </span>
         </div>
         <div className="leading-tight">
           <p className="text-sm font-bold">
             EthioFlow <span className="text-gold-500">AI</span>
           </p>
-          <p className="text-[10px] text-white/50">በልህ ንግድ</p>
+          <p className="text-[10px] text-white/50">ብልህ ንግድ</p>
         </div>
       </div>
 
