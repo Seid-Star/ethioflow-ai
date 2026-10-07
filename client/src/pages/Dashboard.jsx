@@ -40,6 +40,7 @@ function daysAgo(n) {
 
 export default function Dashboard() {
   const user = useAuthStore((s) => s.user);
+  // throw new Error("test");
   const [today, setToday] = useState(null);
   const [dailySales, setDailySales] = useState([]);
   const [expenseBreakdown, setExpenseBreakdown] = useState([]);
@@ -92,7 +93,7 @@ export default function Dashboard() {
         Here's what's happening with your business today.
       </p>
 
-      <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Today's Revenue"
           value={loading ? "..." : `${today.revenue.toLocaleString()} ETB`}
