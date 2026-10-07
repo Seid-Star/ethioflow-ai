@@ -1,0 +1,44 @@
+{
+  "nav": {
+    "dashboard": "ዳሽቦርድ",
+    "pos": "ሽያጭ (POS)",
+    "products": "ምርቶች",
+    "inventory": "እቃ ክምችት",
+    "customers": "ደንበኞች",
+    "suppliers": "አቅራቢዎች",
+    "purchases": "ግዢዎች",
+    "expenses": "ወጪዎች",
+    "reports": "ሪፖርቶች",
+    "ai": "AI አማካሪ",
+    "settings": "ቅንብሮች"
+  },
+  "dashboard": {
+    "greeting": "እንደምን አደሩ",
+    "subtitle": "ዛሬ በንግድዎ ላይ እየሆነ ያለው ይህ ነው።",
+    "todaysRevenue": "የዛሬ ገቢ",
+    "todaysExpenses": "የዛሬ ወጪ",
+    "estimatedProfit": "የተገመተ ትርፍ",
+    "inventoryValue": "የእቃ ክምችት ዋጋ",
+    "restockAlerts": "የክምችት ማሳሰቢያዎች",
+    "salesTrend": "የሽያጭ አዝማሚያ (ያለፉት 14 ቀናት)",
+    "expenseBreakdown": "የወጪ ክፍፍል (ያለፉት 30 ቀናት)"
+  },
+  "common": {
+    "logout": "ውጣ",
+    "addProduct": "ምርት ጨምር",
+    "addCustomer": "ደንበኛ ጨምር",
+    "addSupplier": "አቅራቢ ጨምር",
+    "addExpense": "ወጪ ጨምር",
+    "save": "አስቀምጥ",
+    "cancel": "ይቅር",
+    "loading": "በመጫን ላይ...",
+    "noData": "እስካሁን ምንም መረጃ የለም"
+  },
+  "pos": {
+    "search": "ፈልግ ወይም ባርኮድ ቃኝ...",
+    "currentSale": "የአሁኑ ሽያጭ",
+    "cartEmpty": "ጋሪው ባዶ ነው",
+    "charge": "ክፈል",
+    "saveOffline": "ከመስመር ውጭ አስቀምጥ"
+  }
+}
