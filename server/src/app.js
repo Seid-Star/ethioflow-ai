@@ -19,6 +19,8 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 import ocrRoutes from "./routes/ocrRoutes.js";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+import employeeRoutes from "./routes/employeeRoutes.js";
+
 // Recursively strips any object keys starting with "$" or containing "." from
 // req.body only — this blocks MongoDB operator injection (e.g. { "$gt": "" })
 // without touching req.query, which Express 5 made read-only.
@@ -74,6 +76,7 @@ app.use("/api/inventory", inventoryRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/sales", saleRoutes);
 app.use("/api/customers", customerRoutes);
+app.use("/api/employees", employeeRoutes);
 app.use("/api/suppliers", supplierRoutes);
 app.use("/api/purchases", purchaseRoutes);
 app.use("/api/expenses", expenseRoutes);
