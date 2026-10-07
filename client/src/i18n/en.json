@@ -1,0 +1,44 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "pos": "Sales (POS)",
+    "products": "Products",
+    "inventory": "Inventory",
+    "customers": "Customers",
+    "suppliers": "Suppliers",
+    "purchases": "Purchases",
+    "expenses": "Expenses",
+    "reports": "Reports",
+    "ai": "AI Advisor",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "greeting": "Good morning",
+    "subtitle": "Here's what's happening with your business today.",
+    "todaysRevenue": "Today's Revenue",
+    "todaysExpenses": "Today's Expenses",
+    "estimatedProfit": "Estimated Profit",
+    "inventoryValue": "Inventory Value",
+    "restockAlerts": "Restock Alerts",
+    "salesTrend": "Sales Trend (last 14 days)",
+    "expenseBreakdown": "Expense Breakdown (last 30 days)"
+  },
+  "common": {
+    "logout": "Log out",
+    "addProduct": "Add Product",
+    "addCustomer": "Add Customer",
+    "addSupplier": "Add Supplier",
+    "addExpense": "Add Expense",
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "noData": "No data yet"
+  },
+  "pos": {
+    "search": "Search or scan barcode...",
+    "currentSale": "Current Sale",
+    "cartEmpty": "Cart is empty",
+    "charge": "Charge",
+    "saveOffline": "Save Offline"
+  }
+}
