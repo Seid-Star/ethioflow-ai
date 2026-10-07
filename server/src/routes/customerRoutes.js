@@ -8,11 +8,26 @@ import {
   recordPayment,
   getDebtSummary,
 } from "../controllers/customerController.js";
+import { validateCustomer, validatePayment } from "../validators/index.js";
+import { validate } from "../middleware/validate.js";
 
 const router = Router();
 
 router.use(protect);
-
+router.post(
+  "/",
+  authorize("owner", "manager", "cashier"),
+  validateCustomer,
+  validate,
+  createCustomer,
+);
+router.post(
+  "/:id/payments",
+  authorize("owner", "manager", "cashier", "accountant"),
+  validatePayment,
+  validate,
+  recordPayment,
+);
 router.get("/", getCustomers);
 router.get("/summary/debt", getDebtSummary);
 router.get("/:id", getCustomer);
