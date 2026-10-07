@@ -19,6 +19,7 @@ import NotFound from "./pages/NotFound";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Finance from "./pages/Finance";
 import Settings from "./pages/Settings";
+import Employees from "./pages/Employees";
 export default function App() {
   return (
     <ErrorBoundary>
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="pos" element={<POS />} />
           <Route path="customers" element={<Customers />} />
           <Route path="customers/:id" element={<CustomerProfile />} />
+          <Route path="employees" element={<Employees />} />
           <Route path="suppliers" element={<Suppliers />} />
           <Route path="purchases" element={<Purchases />} />
           <Route path="expenses" element={<Expenses />} />
