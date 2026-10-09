@@ -8,6 +8,7 @@ const typeStyles = {
   stock_in: "bg-emerald-50 text-emerald-700",
   adjustment: "bg-amber-50 text-amber-700",
   transfer: "bg-sky-50 text-sky-700",
+  refund: "bg-sky-50 text-sky-700",
 };
 
 const typeLabels = {
@@ -15,6 +16,7 @@ const typeLabels = {
   stock_in: "Stock In",
   adjustment: "Adjustment",
   transfer: "Transfer",
+  refund: "Refund",
 };
 
 export default function Inventory() {
@@ -110,7 +112,7 @@ export default function Inventory() {
         ) : movements.length === 0 ? (
           <p className="p-6 text-sm text-ink-900/50">No stock movements yet.</p>
         ) : (
-            <table className="w-full min-w-[640px] text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <thead className="bg-forest-50 text-left text-xs uppercase text-ink-900/50">
               <tr>
                 <th className="px-5 py-3">Product</th>
