@@ -14,6 +14,7 @@ import {
   FileText,
   Sparkles,
   Settings,
+  Receipt,
 } from "lucide-react";
 
 const navItems = [
@@ -25,6 +26,7 @@ const navItems = [
     enabled: true,
   },
   { to: "/dashboard/pos", icon: ShoppingCart, key: "pos", enabled: true },
+  { to: "/dashboard/sales", icon: Receipt, key: "sales", enabled: true },
   { to: "/dashboard/products", icon: Package, key: "products", enabled: true },
   { to: "/dashboard/inventory", icon: Boxes, key: "inventory", enabled: true },
   { to: "/dashboard/customers", icon: Users, key: "customers", enabled: true },
