@@ -12,6 +12,7 @@ const saleItemSchema = new mongoose.Schema(
     unitPrice: { type: Number, required: true },
     costPriceAtSale: { type: Number, required: true },
     lineTotal: { type: Number, required: true },
+    refundedQuantity: { type: Number, default: 0 },
   },
   { _id: false },
 );
@@ -68,18 +69,23 @@ const saleSchema = new mongoose.Schema(
     },
     amountPaid: { type: Number, required: true },
 
-    // --- Offline sync tracking ---
+    // Loyalty
+    pointsRedeemed: { type: Number, default: 0 },
+    pointsDiscount: { type: Number, default: 0 },
+    pointsEarned: { type: Number, default: 0 },
+
+    // Refunds
+    refundedTotal: { type: Number, default: 0 },
+
+    // Offline sync tracking (Day 23)
     isOfflineSale: { type: Boolean, default: false },
-    offlineTransactionId: { type: String }, // set only for sales created via the sync endpoint
+    offlineTransactionId: { type: String },
     syncedAt: Date,
-    hasStockConflict: { type: Boolean, default: false }, // true if syncing this sale pushed stock below 0
+    hasStockConflict: { type: Boolean, default: false },
   },
   { timestamps: true },
 );
 
-// Prevents the exact same offline sale from ever being saved twice, even if sync
-// runs more than once (flaky connection, double-tap, retried request) — but only
-// applies to documents that actually have an offlineTransactionId.
 saleSchema.index(
   { business: 1, offlineTransactionId: 1 },
   { unique: true, sparse: true },
