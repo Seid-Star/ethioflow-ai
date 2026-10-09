@@ -130,9 +130,28 @@ async function createProducts(business) {
 async function createCustomers(business) {
   console.log("👥 Creating customers...");
   const defs = [
-    { name: "Hana Tesfaye", phone: "0922111111" },
-    { name: "Dawit Alemu", phone: "0933222222" },
-    { name: "Meron Girma", phone: "0944333333" },
+    {
+      name: "Hana Tesfaye",
+      phone: "0922111111",
+      loyaltyPoints: 180,
+      notes: [
+        {
+          text: "Prefers mobile money. Usually settles her balance at the start of the month.",
+        },
+      ],
+    },
+    {
+      name: "Dawit Alemu",
+      phone: "0933222222",
+      loyaltyPoints: 75,
+      notes: [{ text: "Buys in bulk before holidays." }],
+    },
+    {
+      name: "Meron Girma",
+      phone: "0944333333",
+      loyaltyPoints: 320,
+      notes: [{ text: "Regular customer. Always asks for coffee first." }],
+    },
   ];
   return Customer.insertMany(
     defs.map((c) => ({ ...c, business: business._id })),
