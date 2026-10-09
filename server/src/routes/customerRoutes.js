@@ -7,6 +7,7 @@ import {
   updateCustomer,
   recordPayment,
   getDebtSummary,
+  addNote,
 } from "../controllers/customerController.js";
 import { validateCustomer, validatePayment } from "../validators/index.js";
 import { validate } from "../middleware/validate.js";
@@ -38,5 +39,6 @@ router.post(
   authorize("owner", "manager", "cashier", "accountant"),
   recordPayment,
 );
+router.post("/:id/notes", authorize("owner", "manager", "cashier"), addNote);
 
 export default router;
