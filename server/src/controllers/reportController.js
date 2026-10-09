@@ -35,6 +35,7 @@ export const salesReport = asyncHandler(async (req, res) => {
       subtotal: s.subtotal,
       discount: s.discount,
       tax: s.tax,
+      refunded: s.refundedTotal || 0,
       total: s.total,
       paymentMethod: s.paymentMethod,
     })),
