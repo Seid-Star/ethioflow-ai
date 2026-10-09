@@ -12,6 +12,7 @@
   "nav": {
     "dashboard": "ዳሽቦርድ",
     "pos": "ሽያጭ (POS)",
+    "sales": "የሽያጭ ታሪክ",
     "products": "ምርቶች",
     "inventory": "እቃ ክምችት",
     "customers": "ደንበኞች",
