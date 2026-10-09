@@ -9,6 +9,7 @@ import {
   X,
   UserCircle2,
   CloudOff,
+  Star,
 } from "lucide-react";
 import { api } from "../api/axios";
 import { useCartStore } from "../store/cartStore";
@@ -18,6 +19,7 @@ import {
   getCachedProducts,
   savePendingSale,
 } from "../offline/db";
+import { ETB_PER_POINT, pointsEarnedFor } from "../lib/loyalty";
 
 const baseMethods = [
   { value: "cash", label: "Cash" },
@@ -34,6 +36,7 @@ export default function POS() {
   const [search, setSearch] = useState("");
   const [discount, setDiscount] = useState(0);
   const [tax, setTax] = useState(0);
+  const [redeemPoints, setRedeemPoints] = useState(0);
   const [isSplit, setIsSplit] = useState(false);
   const [singleMethod, setSingleMethod] = useState("cash");
   const [splitLines, setSplitLines] = useState([
@@ -53,15 +56,13 @@ export default function POS() {
     subtotal,
   } = useCartStore();
 
-  // Load products: from the server (and refresh the offline cache) when online,
-  // from the offline cache directly when not.
   useEffect(() => {
     async function loadProducts() {
       if (isOnline) {
         try {
           const { data } = await api.get("/products");
           setProducts(data);
-          cacheProducts(data); // keep the offline copy fresh for next time connection drops
+          cacheProducts(data);
         } catch {
           const cached = await getCachedProducts();
           setProducts(cached);
@@ -74,13 +75,13 @@ export default function POS() {
     loadProducts();
   }, [isOnline]);
 
-  // Customer Credit requires knowing live balances, so it's online-only for now (Day 23 note below)
   useEffect(() => {
     if (isOnline) {
       api.get("/customers").then(({ data }) => setCustomers(data));
     } else {
       setCustomers([]);
       setCustomerId("");
+      setRedeemPoints(0);
     }
   }, [isOnline]);
 
@@ -91,7 +92,26 @@ export default function POS() {
   );
 
   const sub = subtotal();
-  const total = Math.max(0, sub - Number(discount) + Number(tax));
+  const selectedCustomer = customers.find((c) => c._id === customerId);
+  const availablePoints = selectedCustomer?.loyaltyPoints || 0;
+  const payableBeforePoints = Math.max(0, sub - Number(discount));
+  const maxRedeemable = Math.min(
+    availablePoints,
+    Math.floor(payableBeforePoints / ETB_PER_POINT),
+  );
+  const pointsToUse = Math.min(
+    Math.max(0, Math.floor(Number(redeemPoints) || 0)),
+    maxRedeemable,
+  );
+  const pointsDiscount = pointsToUse * ETB_PER_POINT;
+
+  const total = Math.max(
+    0,
+    sub - Number(discount) - pointsDiscount + Number(tax),
+  );
+  const pointsToEarn =
+    selectedCustomer && isOnline ? pointsEarnedFor(total) : 0;
+
   const methods =
     customerId && isOnline
       ? [...baseMethods, { value: "customer_credit", label: "Customer Credit" }]
@@ -112,6 +132,15 @@ export default function POS() {
     setSplitLines((lines) => lines.filter((_, i) => i !== index));
   }
 
+  function resetSale() {
+    clear();
+    setDiscount(0);
+    setTax(0);
+    setRedeemPoints(0);
+    setIsSplit(false);
+    setSplitLines([{ method: "cash", amount: "" }]);
+  }
+
   async function handleCheckout() {
     if (items.length === 0) return;
     setError("");
@@ -125,7 +154,6 @@ export default function POS() {
     setSubmitting(true);
 
     if (!isOnline) {
-      // --- OFFLINE PATH: save to IndexedDB, never touch the network ---
       const offlineSale = {
         offlineTransactionId: crypto.randomUUID(),
         items: items.map((i) => ({
@@ -144,16 +172,11 @@ export default function POS() {
       await savePendingSale(offlineSale);
 
       setReceipt({ ...offlineSale, isOffline: true });
-      clear();
-      setDiscount(0);
-      setTax(0);
-      setIsSplit(false);
-      setSplitLines([{ method: "cash", amount: "" }]);
+      resetSale();
       setSubmitting(false);
       return;
     }
 
-    // --- ONLINE PATH: same as before ---
     try {
       const { data } = await api.post("/sales", {
         items: items.map((i) => ({ productId: i.productId, quantity: i.qty })),
@@ -161,13 +184,10 @@ export default function POS() {
         tax: Number(tax) || 0,
         payments,
         customerId: customerId || undefined,
+        redeemPoints: pointsToUse,
       });
       setReceipt(data);
-      clear();
-      setDiscount(0);
-      setTax(0);
-      setIsSplit(false);
-      setSplitLines([{ method: "cash", amount: "" }]);
+      resetSale();
       setCustomerId("");
       const [{ data: freshProducts }, { data: freshCustomers }] =
         await Promise.all([api.get("/products"), api.get("/customers")]);
@@ -191,7 +211,7 @@ export default function POS() {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <div className="lg:col-span-2">
         {!isOnline && (
           <div className="mb-4 flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
@@ -250,7 +270,10 @@ export default function POS() {
           </label>
           <select
             value={customerId}
-            onChange={(e) => setCustomerId(e.target.value)}
+            onChange={(e) => {
+              setCustomerId(e.target.value);
+              setRedeemPoints(0);
+            }}
             disabled={!isOnline}
             className="w-full rounded-lg border border-black/10 px-3 py-2 text-sm outline-none focus:border-forest-700 disabled:bg-black/5 disabled:text-ink-900/40"
           >
@@ -258,14 +281,57 @@ export default function POS() {
             {customers.map((c) => (
               <option key={c._id} value={c._id}>
                 {c.name}
+                {c.loyaltyPoints ? ` · ⭐ ${c.loyaltyPoints}` : ""}
               </option>
             ))}
           </select>
           {!isOnline && (
             <p className="mt-1 text-[11px] text-ink-900/40">
-              Customer Credit needs a connection — cash/mobile money only while
-              offline
+              Customer Credit and loyalty need a connection — cash/mobile money
+              only while offline
             </p>
+          )}
+
+          {selectedCustomer && (
+            <div className="mt-3 rounded-xl bg-gradient-to-br from-forest-900 to-forest-700 p-3.5 text-white">
+              <div className="flex items-center justify-between">
+                <p className="flex items-center gap-1.5 text-xs font-medium text-gold-500">
+                  <Star size={13} className="fill-gold-500" /> Loyalty Points
+                </p>
+                <p className="text-lg font-bold">{availablePoints}</p>
+              </div>
+
+              {availablePoints > 0 && items.length > 0 ? (
+                <div className="mt-2.5 flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    max={maxRedeemable}
+                    value={redeemPoints}
+                    onChange={(e) => setRedeemPoints(e.target.value)}
+                    className="w-20 rounded-md bg-white/10 px-2 py-1 text-sm text-white outline-none placeholder:text-white/40"
+                    placeholder="0"
+                  />
+                  <button
+                    onClick={() => setRedeemPoints(maxRedeemable)}
+                    className="rounded-md bg-gold-500 px-2.5 py-1 text-xs font-semibold text-forest-950"
+                  >
+                    Use max
+                  </button>
+                  <p className="text-[11px] text-white/60">
+                    {pointsToUse > 0
+                      ? `= ${pointsDiscount.toFixed(2)} ETB off`
+                      : `up to ${maxRedeemable} usable`}
+                  </p>
+                </div>
+              ) : (
+                <p className="mt-1.5 text-[11px] text-white/55">
+                  {availablePoints > 0
+                    ? "Add items to redeem points"
+                    : "Earns 1 point for every 10 ETB spent"}
+                </p>
+              )}
+            </div>
           )}
         </div>
 
@@ -329,6 +395,12 @@ export default function POS() {
               className="w-24 rounded-md border border-black/10 px-2 py-1 text-right text-sm outline-none focus:border-forest-700"
             />
           </div>
+          {pointsDiscount > 0 && (
+            <div className="flex justify-between text-sm text-gold-600">
+              <span>Points discount ({pointsToUse} pts)</span>
+              <span>-{pointsDiscount.toFixed(2)} ETB</span>
+            </div>
+          )}
           <div className="flex items-center justify-between text-sm">
             <span className="text-ink-900/60">Tax</span>
             <input
@@ -343,6 +415,12 @@ export default function POS() {
             <span>Total</span>
             <span>{total.toFixed(2)} ETB</span>
           </div>
+          {pointsToEarn > 0 && items.length > 0 && (
+            <p className="flex items-center justify-end gap-1 text-[11px] text-forest-700">
+              <Star size={11} className="fill-gold-500 text-gold-500" />{" "}
+              Customer earns {pointsToEarn} points with this sale
+            </p>
+          )}
         </div>
 
         <div className="mb-4">
@@ -456,6 +534,9 @@ export default function POS() {
 }
 
 function Receipt({ sale, onNewSale }) {
+  const pointsDiscount = sale.pointsDiscount || 0;
+  const pointsEarned = sale.pointsEarned || 0;
+
   return (
     <div className="mx-auto max-w-sm rounded-2xl border border-black/5 bg-white p-6 text-center">
       {sale.isOffline ? (
@@ -508,6 +589,12 @@ function Receipt({ sale, onNewSale }) {
           <span>Discount</span>
           <span>-{sale.discount.toFixed(2)} ETB</span>
         </div>
+        {pointsDiscount > 0 && (
+          <div className="flex justify-between text-gold-600">
+            <span>Points discount ({sale.pointsRedeemed} pts)</span>
+            <span>-{pointsDiscount.toFixed(2)} ETB</span>
+          </div>
+        )}
         <div className="flex justify-between text-ink-900/60">
           <span>Tax</span>
           <span>+{sale.tax.toFixed(2)} ETB</span>
@@ -518,7 +605,7 @@ function Receipt({ sale, onNewSale }) {
         </div>
       </div>
 
-      <div className="mb-6 space-y-1 border-t border-dashed border-black/10 pt-3 text-left text-xs text-ink-900/60">
+      <div className="mb-4 space-y-1 border-t border-dashed border-black/10 pt-3 text-left text-xs text-ink-900/60">
         <p className="mb-1 font-medium text-ink-900/80">Paid via:</p>
         {sale.payments.map((p, i) => (
           <div key={i} className="flex justify-between capitalize">
@@ -527,6 +614,13 @@ function Receipt({ sale, onNewSale }) {
           </div>
         ))}
       </div>
+
+      {pointsEarned > 0 && (
+        <p className="mb-5 flex items-center justify-center gap-1.5 rounded-xl bg-gold-500/15 py-2 text-sm font-medium text-forest-900">
+          <Star size={14} className="fill-gold-500 text-gold-500" /> +
+          {pointsEarned} loyalty points earned
+        </p>
+      )}
 
       <button
         onClick={onNewSale}
