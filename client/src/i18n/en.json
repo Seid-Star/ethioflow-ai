@@ -12,6 +12,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "pos": "Sales (POS)",
+    "sales": "Sales History",
     "products": "Products",
     "inventory": "Inventory",
     "customers": "Customers",
@@ -19,6 +20,7 @@
     "suppliers": "Suppliers",
     "purchases": "Purchases",
     "expenses": "Expenses",
+    "finance":"Finance",
     "reports": "Reports",
     "ai": "AI Advisor",
     "settings": "Settings"
