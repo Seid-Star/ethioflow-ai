@@ -4,10 +4,18 @@ import Product from "../models/Product.js";
 import InventoryMovement from "../models/InventoryMovement.js";
 import Sale from "../models/Sale.js";
 import Customer from "../models/Customer.js";
+import { ETB_PER_POINT, pointsEarnedFor } from "../config/loyalty.js";
 
-// POST /api/sales — the checkout action
+// POST /api/sales
 export const createSale = asyncHandler(async (req, res) => {
-  const { items, discount = 0, tax = 0, payments, customerId } = req.body;
+  const {
+    items,
+    discount = 0,
+    tax = 0,
+    payments,
+    customerId,
+    redeemPoints = 0,
+  } = req.body;
 
   if (!items || items.length === 0) {
     res.status(400);
@@ -31,13 +39,13 @@ export const createSale = asyncHandler(async (req, res) => {
   }
 
   const session = await mongoose.startSession();
+  let createdSale;
 
   try {
-    let subtotal = 0;
-    const saleItems = [];
-
     await session.withTransaction(async () => {
-      // Validate the customer up front, inside the transaction
+      let subtotal = 0;
+      const saleItems = [];
+
       let customer = null;
       if (customerId) {
         customer = await Customer.findOne({
@@ -45,6 +53,18 @@ export const createSale = asyncHandler(async (req, res) => {
           business: req.auth.business,
         }).session(session);
         if (!customer) throw new Error("Selected customer not found");
+      }
+
+      // --- Loyalty: validate points redemption ---
+      const pointsRedeemed = Math.floor(Number(redeemPoints) || 0);
+      let pointsDiscount = 0;
+      if (pointsRedeemed > 0) {
+        if (!customer)
+          throw new Error("Select a customer to redeem loyalty points");
+        if (pointsRedeemed > customer.loyaltyPoints) {
+          throw new Error(`Customer only has ${customer.loyaltyPoints} points`);
+        }
+        pointsDiscount = pointsRedeemed * ETB_PER_POINT;
       }
 
       for (const item of items) {
@@ -93,8 +113,12 @@ export const createSale = asyncHandler(async (req, res) => {
         });
       }
 
-      const total =
-        Math.round((subtotal - Number(discount) + Number(tax)) * 100) / 100;
+      const rawTotal =
+        subtotal - Number(discount) - pointsDiscount + Number(tax);
+      if (rawTotal < 0)
+        throw new Error("Discounts cannot exceed the sale total");
+
+      const total = Math.round(rawTotal * 100) / 100;
       const amountPaid =
         Math.round(
           payments.reduce((sum, p) => sum + Number(p.amount), 0) * 100,
@@ -107,6 +131,7 @@ export const createSale = asyncHandler(async (req, res) => {
       }
 
       const paymentMethod = payments.length > 1 ? "split" : payments[0].method;
+      const pointsEarned = customer ? pointsEarnedFor(total) : 0;
 
       const [sale] = await Sale.create(
         [
@@ -125,13 +150,14 @@ export const createSale = asyncHandler(async (req, res) => {
             })),
             paymentMethod,
             amountPaid,
+            pointsRedeemed,
+            pointsDiscount,
+            pointsEarned,
           },
         ],
         { session },
       );
 
-      // If a customer is attached, log the full purchase on their ledger, plus
-      // whatever was actually paid right now (everything except the credit line).
       if (customer) {
         customer.recordEntry({
           type: "purchase",
@@ -153,13 +179,19 @@ export const createSale = asyncHandler(async (req, res) => {
           });
         }
 
+        customer.loyaltyPoints =
+          Math.max(0, customer.loyaltyPoints - pointsRedeemed) + pointsEarned;
         await customer.save({ session });
       }
 
-      res.locals.sale = sale;
+      createdSale = sale;
     });
 
-    res.status(201).json(res.locals.sale);
+    const populated = await Sale.findById(createdSale._id).populate(
+      "customer",
+      "name loyaltyPoints",
+    );
+    res.status(201).json(populated);
   } finally {
     session.endSession();
   }
