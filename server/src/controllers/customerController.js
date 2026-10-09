@@ -5,18 +5,18 @@ import Customer from "../models/Customer.js";
 export const getCustomers = asyncHandler(async (req, res) => {
   const customers = await Customer.find({ business: req.auth.business })
     .select(
-      "name phone address totalPurchased totalPaid outstandingBalance createdAt",
+      "name phone address totalPurchased totalPaid outstandingBalance loyaltyPoints createdAt",
     )
     .sort("-outstandingBalance");
   res.json(customers);
 });
 
-// GET /api/customers/:id — full profile with ledger
+// GET /api/customers/:id
 export const getCustomer = asyncHandler(async (req, res) => {
   const customer = await Customer.findOne({
     _id: req.params.id,
     business: req.auth.business,
-  });
+  }).populate("notes.createdBy", "name");
   if (!customer) {
     res.status(404);
     throw new Error("Customer not found");
@@ -55,7 +55,7 @@ export const updateCustomer = asyncHandler(async (req, res) => {
   res.json(customer);
 });
 
-// POST /api/customers/:id/payments — record a payment against the customer's debt
+// POST /api/customers/:id/payments
 export const recordPayment = asyncHandler(async (req, res) => {
   const { amount, note } = req.body;
 
@@ -90,7 +90,31 @@ export const recordPayment = asyncHandler(async (req, res) => {
   res.json(customer);
 });
 
-// GET /api/customers/summary/debt — feeds the dashboard's credit KPIs
+// POST /api/customers/:id/notes
+export const addNote = asyncHandler(async (req, res) => {
+  const { text } = req.body;
+  if (!text || !text.trim()) {
+    res.status(400);
+    throw new Error("Note text is required");
+  }
+
+  const customer = await Customer.findOne({
+    _id: req.params.id,
+    business: req.auth.business,
+  });
+  if (!customer) {
+    res.status(404);
+    throw new Error("Customer not found");
+  }
+
+  customer.notes.push({ text: text.trim(), createdBy: req.auth.id });
+  await customer.save();
+  await customer.populate("notes.createdBy", "name");
+
+  res.status(201).json(customer);
+});
+
+// GET /api/customers/summary/debt
 export const getDebtSummary = asyncHandler(async (req, res) => {
   const customers = await Customer.find({
     business: req.auth.business,
@@ -101,7 +125,5 @@ export const getDebtSummary = asyncHandler(async (req, res) => {
     (sum, c) => sum + c.outstandingBalance,
     0,
   );
-  const customersWithDebt = customers.length;
-
-  res.json({ totalOutstanding, customersWithDebt });
+  res.json({ totalOutstanding, customersWithDebt: customers.length });
 });
