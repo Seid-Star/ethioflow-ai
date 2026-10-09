@@ -11,6 +11,12 @@ const ledgerEntrySchema = new mongoose.Schema(
   { _id: false },
 );
 
+const noteSchema = new mongoose.Schema({
+  text: { type: String, required: true, trim: true },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  createdAt: { type: Date, default: Date.now },
+});
+
 const customerSchema = new mongoose.Schema(
   {
     business: {
@@ -25,13 +31,13 @@ const customerSchema = new mongoose.Schema(
     totalPurchased: { type: Number, default: 0 },
     totalPaid: { type: Number, default: 0 },
     outstandingBalance: { type: Number, default: 0 },
+    loyaltyPoints: { type: Number, default: 0, min: 0 },
     ledger: [ledgerEntrySchema],
+    notes: [noteSchema],
   },
   { timestamps: true },
 );
 
-// Adds one ledger line and keeps the running totals in sync — this is the only
-// place balances ever change, so the math can never drift out of step with the history.
 customerSchema.methods.recordEntry = function ({
   type,
   amount,
