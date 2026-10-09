@@ -20,6 +20,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import Finance from "./pages/Finance";
 import Settings from "./pages/Settings";
 import Employees from "./pages/Employees";
+import Sales from "./pages/Sales";
 export default function App() {
   return (
     <ErrorBoundary>
@@ -40,6 +41,7 @@ export default function App() {
           <Route path="products" element={<Products />} />
           <Route path="inventory" element={<Inventory />} />
           <Route path="pos" element={<POS />} />
+          <Route path="sales" element={<Sales />} />
           <Route path="customers" element={<Customers />} />
           <Route path="customers/:id" element={<CustomerProfile />} />
           <Route path="employees" element={<Employees />} />
