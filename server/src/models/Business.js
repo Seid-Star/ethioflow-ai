@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-
 const branchSchema = new mongoose.Schema({
   name: { type: String, required: true },
   address: String,
@@ -15,11 +14,24 @@ const businessSchema = new mongoose.Schema(
     currency: { type: String, default: "ETB" },
     taxRate: { type: Number, default: 0 },
     branches: [branchSchema],
+
+    // Subscription (status is left empty on old accounts; the first read starts their trial)
     subscriptionPlan: {
       type: String,
-      enum: ["free", "professional", "enterprise"],
+      enum: ["free", "basic", "professional", "enterprise"],
       default: "free",
     },
+    subscriptionStatus: {
+      type: String,
+      enum: ["trialing", "active", "canceled", "expired"],
+    },
+    billingCycle: {
+      type: String,
+      enum: ["monthly", "yearly"],
+      default: "monthly",
+    },
+    trialEndsAt: Date,
+    currentPeriodEnd: Date,
   },
   { timestamps: true },
 );
