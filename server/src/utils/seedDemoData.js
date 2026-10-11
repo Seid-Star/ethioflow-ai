@@ -12,6 +12,14 @@ import Customer from "../models/Customer.js";
 import Supplier from "../models/Supplier.js";
 import Purchase from "../models/Purchase.js";
 import Expense from "../models/Expense.js";
+import Employee from "../models/Employee.js";
+import Attendance from "../models/Attendance.js";
+import LeaveRequest from "../models/LeaveRequest.js";
+import Refund from "../models/Refund.js";
+import Notification from "../models/Notification.js";
+import AIMessage from "../models/AIMessage.js";
+import AuditLog from "../models/AuditLog.js";
+import SubscriptionInvoice from "../models/SubscriptionInvoice.js";
 
 const DEMO_EMAIL = "abebe@demo.ethioflow.ai";
 const HISTORY_DAYS = 45; // deliberately > 30, so data reliably spans two calendar months
@@ -28,24 +36,40 @@ async function clearPreviousDemoData() {
   const businessId = existingUser.business;
   await Promise.all([
     Sale.deleteMany({ business: businessId }),
+    Refund.deleteMany({ business: businessId }),
     InventoryMovement.deleteMany({ business: businessId }),
     Customer.deleteMany({ business: businessId }),
     Supplier.deleteMany({ business: businessId }),
     Purchase.deleteMany({ business: businessId }),
     Expense.deleteMany({ business: businessId }),
     Product.deleteMany({ business: businessId }),
+    Employee.deleteMany({ business: businessId }),
+    Attendance.deleteMany({ business: businessId }),
+    LeaveRequest.deleteMany({ business: businessId }),
+    Notification.deleteMany({ business: businessId }),
+    AIMessage.deleteMany({ business: businessId }),
+    AuditLog.deleteMany({ business: businessId }),
+    SubscriptionInvoice.deleteMany({ business: businessId }),
   ]);
-  await User.deleteOne({ _id: existingUser._id });
+  await User.deleteMany({ business: businessId });
   await Business.deleteOne({ _id: businessId });
 }
 
 async function createBusinessAndOwner() {
   console.log("🏪 Creating Abebe General Store...");
+  const DAY = 24 * 60 * 60 * 1000;
+  const periodStart = new Date(Date.now() - 30 * DAY);
+  const periodEnd = new Date(Date.now() + 335 * DAY);
+
   const business = await Business.create({
     name: "Abebe General Store",
     type: "General Merchant",
     currency: "ETB",
     branches: [{ name: "Main Branch", isMain: true }],
+    subscriptionPlan: "professional",
+    subscriptionStatus: "active",
+    billingCycle: "yearly",
+    currentPeriodEnd: periodEnd,
   });
 
   const owner = await User.create({
@@ -57,6 +81,23 @@ async function createBusinessAndOwner() {
     role: "owner",
   });
 
+  // A paid yearly invoice, so the billing history isn't empty
+  const invoice = await SubscriptionInvoice.create({
+    business: business._id,
+    plan: "professional",
+    billingCycle: "yearly",
+    amount: 7990,
+    paymentMethod: "mobile_money",
+    reference: "EF-DEMO-0001",
+    periodStart,
+    periodEnd,
+    createdBy: owner._id,
+  });
+  await SubscriptionInvoice.updateOne(
+    { _id: invoice._id },
+    { createdAt: periodStart },
+  );
+
   return { business, owner };
 }
 
@@ -65,6 +106,7 @@ async function createProducts(business) {
   const productDefs = [
     {
       name: "Cooking Oil",
+      barcode: "6210000000001",
       costPrice: 180,
       sellingPrice: 220,
       currentStock: 45,
@@ -73,6 +115,7 @@ async function createProducts(business) {
     },
     {
       name: "Sugar",
+      barcode: "6210000000002",
       costPrice: 60,
       sellingPrice: 75,
       currentStock: 90,
@@ -81,6 +124,7 @@ async function createProducts(business) {
     },
     {
       name: "Flour",
+      barcode: "6210000000003",
       costPrice: 50,
       sellingPrice: 65,
       currentStock: 70,
@@ -89,6 +133,7 @@ async function createProducts(business) {
     },
     {
       name: "Soap",
+      barcode: "6210000000004",
       costPrice: 25,
       sellingPrice: 35,
       currentStock: 120,
@@ -97,14 +142,16 @@ async function createProducts(business) {
     },
     {
       name: "Milk",
+      barcode: "6210000000005",
       costPrice: 40,
       sellingPrice: 50,
       currentStock: 8,
       minStock: 15,
       unit: "liter",
-    }, // low stock, no sales — tests the honest fallback
+    },
     {
       name: "Coffee",
+      barcode: "6210000000006",
       costPrice: 200,
       sellingPrice: 260,
       currentStock: 35,
@@ -113,6 +160,7 @@ async function createProducts(business) {
     },
     {
       name: "Biscuits",
+      barcode: "6210000000007",
       costPrice: 15,
       sellingPrice: 22,
       currentStock: 150,
@@ -440,7 +488,66 @@ async function generateExpenses(business, owner) {
 
   console.log("✅ Expenses generated");
 }
+async function createEmployees(business, owner) {
+  console.log("🧑‍💼 Creating employees...");
+  const defs = [
+    {
+      name: "Hana Girma",
+      department: "Sales",
+      position: "Cashier",
+      phone: "0911200001",
+      monthlySalary: 3500,
+    },
+    {
+      name: "Dawit Bekele",
+      department: "Inventory",
+      position: "Stock Keeper",
+      phone: "0911200002",
+      monthlySalary: 4200,
+    },
+    {
+      name: "Selam Tadesse",
+      department: "Finance",
+      position: "Accountant",
+      phone: "0911200003",
+      monthlySalary: 5500,
+    },
+    {
+      name: "Yonas Haile",
+      department: "Sales",
+      position: "Cashier",
+      phone: "0911200004",
+      monthlySalary: 3500,
+    },
+  ];
+  const employees = await Employee.insertMany(
+    defs.map((e) => ({ ...e, business: business._id, branch: "Main Branch" })),
+  );
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const statuses = ["present", "present", "late", "present"];
+  await Attendance.insertMany(
+    employees.map((e, i) => ({
+      business: business._id,
+      employee: e._id,
+      date: today,
+      status: statuses[i],
+      recordedBy: owner._id,
+    })),
+  );
+
+  // One pending leave request, so Approve/Reject has something to show
+  const start = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+  const end = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
+  await LeaveRequest.create({
+    business: business._id,
+    employee: employees[3]._id,
+    startDate: start,
+    endDate: end,
+    reason: "Family event",
+  });
+}
 async function seed() {
   await connectDB();
 
