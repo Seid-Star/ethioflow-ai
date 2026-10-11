@@ -1,70 +1,134 @@
 import { NavLink } from "react-router-dom";
-import { UsersRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   LayoutDashboard,
   ShoppingCart,
+  Receipt,
   Package,
   Boxes,
   Users,
+  UsersRound,
   Truck,
   ClipboardList,
   Wallet,
   LineChart,
   FileText,
   Sparkles,
+  CreditCard,
+  ScrollText,
   Settings,
-  Receipt,
 } from "lucide-react";
+import { useAuthStore } from "../../store/authStore";
+import PlanBadge from "./PlanBadge";
 
 const navItems = [
   {
     to: "/dashboard",
     icon: LayoutDashboard,
     key: "dashboard",
+    label: "Dashboard",
     end: true,
-    enabled: true,
   },
-  { to: "/dashboard/pos", icon: ShoppingCart, key: "pos", enabled: true },
-  { to: "/dashboard/sales", icon: Receipt, key: "sales", enabled: true },
-  { to: "/dashboard/products", icon: Package, key: "products", enabled: true },
-  { to: "/dashboard/inventory", icon: Boxes, key: "inventory", enabled: true },
-  { to: "/dashboard/customers", icon: Users, key: "customers", enabled: true },
+  {
+    to: "/dashboard/pos",
+    icon: ShoppingCart,
+    key: "pos",
+    label: "Sales (POS)",
+  },
+  {
+    to: "/dashboard/sales",
+    icon: Receipt,
+    key: "sales",
+    label: "Sales History",
+  },
+  {
+    to: "/dashboard/products",
+    icon: Package,
+    key: "products",
+    label: "Products",
+  },
+  {
+    to: "/dashboard/inventory",
+    icon: Boxes,
+    key: "inventory",
+    label: "Inventory",
+  },
+  {
+    to: "/dashboard/customers",
+    icon: Users,
+    key: "customers",
+    label: "Customers",
+  },
   {
     to: "/dashboard/employees",
     icon: UsersRound,
     key: "employees",
-    enabled: true,
+    label: "Employees",
   },
-  { to: "/dashboard/suppliers", icon: Truck, key: "suppliers", enabled: true },
+  {
+    to: "/dashboard/suppliers",
+    icon: Truck,
+    key: "suppliers",
+    label: "Suppliers",
+  },
   {
     to: "/dashboard/purchases",
     icon: ClipboardList,
     key: "purchases",
-    enabled: true,
+    label: "Purchases",
   },
-  { to: "/dashboard/expenses", icon: Wallet, key: "expenses", enabled: true },
-  { to: "/dashboard/finance", icon: LineChart, key: "finance", enabled: true },
-  { to: "/dashboard/reports", icon: FileText, key: "reports", enabled: true },
-  { to: "/dashboard/ai", icon: Sparkles, key: "ai", enabled: true },
+  {
+    to: "/dashboard/expenses",
+    icon: Wallet,
+    key: "expenses",
+    label: "Expenses",
+  },
+  {
+    to: "/dashboard/finance",
+    icon: LineChart,
+    key: "finance",
+    label: "Finance",
+  },
+  {
+    to: "/dashboard/reports",
+    icon: FileText,
+    key: "reports",
+    label: "Reports",
+  },
+  { to: "/dashboard/ai", icon: Sparkles, key: "ai", label: "AI Advisor" },
+  {
+    to: "/dashboard/subscription",
+    icon: CreditCard,
+    key: "subscription",
+    label: "Subscription",
+  },
+  {
+    to: "/dashboard/audit",
+    icon: ScrollText,
+    key: "audit",
+    label: "Audit Log",
+    roles: ["owner", "manager"],
+  },
   {
     to: "/dashboard/settings",
     icon: Settings,
     key: "settings",
-    enabled: true,
+    label: "Settings",
   },
 ];
 
 export default function Sidebar() {
   const { t } = useTranslation();
+  const role = useAuthStore((s) => s.user?.role);
+  const visible = navItems.filter(
+    (item) => !item.roles || item.roles.includes(role),
+  );
 
   return (
     <aside className="flex h-screen w-64 shrink-0 flex-col bg-forest-950 text-white">
       <div className="flex items-center gap-3 px-5 py-6">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-gold-500 to-forest-700">
-          <span className="text-lg font-bold text-white">
-            <img src="\public\logo.jpg"></img>
-          </span>
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-gold-500 to-forest-700">
+          <img src="\public\logo1.png"></img>
         </div>
         <div className="leading-tight">
           <p className="text-sm font-bold">
@@ -74,36 +138,26 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3">
-        {navItems.map(({ to, icon: Icon, key, end, enabled }) =>
-          enabled ? (
-            <NavLink
-              key={key}
-              to={to}
-              end={end}
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
-                  isActive
-                    ? "bg-forest-700 text-white"
-                    : "text-white/70 hover:bg-white/5 hover:text-white"
-                }`
-              }
-            >
-              <Icon size={17} /> {t(`nav.${key}`)}
-            </NavLink>
-          ) : (
-            <div
-              key={key}
-              className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm text-white/30"
-            >
-              <span className="flex items-center gap-3">
-                <Icon size={17} /> {t(`nav.${key}`)}
-              </span>
-              <span className="text-[9px] uppercase tracking-wide">Soon</span>
-            </div>
-          ),
-        )}
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-3">
+        {visible.map(({ to, icon: Icon, key, label, end }) => (
+          <NavLink
+            key={key}
+            to={to}
+            end={end}
+            className={({ isActive }) =>
+              `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
+                isActive
+                  ? "bg-forest-700 text-white"
+                  : "text-white/70 hover:bg-white/5 hover:text-white"
+              }`
+            }
+          >
+            <Icon size={17} /> {t(`nav.${key}`, { defaultValue: label })}
+          </NavLink>
+        ))}
       </nav>
+
+      <PlanBadge />
     </aside>
   );
 }
