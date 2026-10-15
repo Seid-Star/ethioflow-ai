@@ -33,11 +33,11 @@ export default function Hero() {
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-forest-950 via-forest-900 to-forest-800 pb-24 pt-32 text-white">
-      {/* Background glow */}
+  
       <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-gold-500/10 blur-3xl" />
 
       <div className="relative mx-auto grid max-w-7xl grid-cols-1 gap-12 px-6 lg:grid-cols-2 lg:px-10">
-        {/* LEFT SIDE */}
+       
         <div className="flex flex-col justify-center text-left">
           <p
             className="animate-fade-up mb-3 text-xs font-semibold tracking-wide text-gold-500"
@@ -67,7 +67,7 @@ export default function Hero() {
             {t("landing.subtitle")}
           </p>
 
-          {/* Pillars */}
+     
           <div
             className="animate-fade-up mb-9 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4"
             style={{ animationDelay: "260ms" }}
@@ -85,7 +85,7 @@ export default function Hero() {
             ))}
           </div>
 
-          {/* Buttons */}
+      
           <div
             className="animate-fade-up flex items-center gap-6"
             style={{ animationDelay: "320ms" }}
@@ -115,17 +115,17 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* RIGHT SIDE */}
+     
         <div className="relative flex items-center justify-center">
-          {/* Main image container */}
+          
           <div className="group relative flex h-80 w-full max-w-md items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm sm:h-96">
-            {/* Background glow */}
+            
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-400/10 via-transparent to-amber-400/10" />
 
-            {/* Glow behind image */}
+            
             <div className="pointer-events-none absolute h-72 w-72 rounded-full bg-emerald-400/20 blur-3xl transition-all duration-700 group-hover:scale-125" />
 
-            {/* Image */}
+    
             <img
               src="/image.png"
               alt="EthioFlow AI"
@@ -133,7 +133,7 @@ export default function Hero() {
             />
           </div>
 
-          {/* POS Menu Card */}
+      
           <div className="animate-float absolute -left-6 top-6 hidden w-40 rounded-2xl bg-forest-900/95 p-2 shadow-xl ring-1 ring-white/10 sm:block">
             {posMenu.map(({ icon: Icon, label }, i) => (
               <div
@@ -148,7 +148,7 @@ export default function Hero() {
             ))}
           </div>
 
-          {/* AI Advisor Card */}
+      
           <div
             className="animate-float absolute -right-4 -top-8 hidden max-w-[220px] rounded-2xl bg-forest-700/95 p-4 text-xs shadow-xl ring-1 ring-white/10 sm:block"
             style={{ animationDelay: "1.2s" }}
@@ -166,7 +166,7 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Bottom wave */}
+   
       <svg
         className="absolute bottom-0 left-0 w-full text-cream-50"
         viewBox="0 0 1440 60"
@@ -177,8 +177,6 @@ export default function Hero() {
           d="M0,32 C480,80 960,0 1440,32 L1440,60 L0,60 Z"
         />
       </svg>
-
-      {/* Demo Modal */}
       {tourOpen && <DemoTourModal onClose={() => setTourOpen(false)} />}
     </section>
   );

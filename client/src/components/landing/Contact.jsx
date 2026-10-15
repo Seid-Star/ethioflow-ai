@@ -6,8 +6,6 @@ export default function Contact() {
 
   function handleSubmit(e) {
     e.preventDefault();
-    // No backend endpoint for this yet — intentionally a stub for the competition build.
-    // Wiring this to a real email service is listed as future work, not faked here.
     setSubmitted(true);
   }
 
