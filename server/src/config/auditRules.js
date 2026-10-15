@@ -30,6 +30,16 @@ export const AUDIT_RULES = [
   },
   {
     method: "POST",
+    path: /^\/api\/employees\/([^/]+)\/leave-requests$/,
+    action: "employee.leave_request",
+    describe: ({ body, match }) => ({
+      summary: `Recorded a leave request (${new Date(body?.startDate).toLocaleDateString()} to ${new Date(body?.endDate).toLocaleDateString()})`,
+      entityType: "leave",
+      entityId: match[1],
+    }),
+  },
+  {
+    method: "POST",
     path: /^\/api\/auth\/register$/,
     action: "auth.register",
     describe: ({ body }) => ({
