@@ -9,6 +9,18 @@ function startOfDay(date = new Date()) {
   return d;
 }
 
+// Every calendar day from start to end, capped so a typo can't create thousands of records
+function daysBetween(start, end) {
+  const days = [];
+  const d = startOfDay(start);
+  const last = startOfDay(end);
+  while (d <= last && days.length < 62) {
+    days.push(new Date(d));
+    d.setDate(d.getDate() + 1);
+  }
+  return days;
+}
+
 // GET /api/employees
 export const getEmployees = asyncHandler(async (req, res) => {
   const employees = await Employee.find({ business: req.auth.business }).sort(
@@ -40,7 +52,7 @@ export const updateEmployee = asyncHandler(async (req, res) => {
   res.json(employee);
 });
 
-// DELETE /api/employees/:id — soft delete (deactivate), keeps attendance/leave history intact
+// DELETE /api/employees/:id (deactivates, keeps attendance/leave history intact)
 export const deactivateEmployee = asyncHandler(async (req, res) => {
   const employee = await Employee.findOneAndUpdate(
     { _id: req.params.id, business: req.auth.business },
@@ -54,7 +66,7 @@ export const deactivateEmployee = asyncHandler(async (req, res) => {
   res.json(employee);
 });
 
-// GET /api/employees/attendance/today — today's attendance sheet for every active employee
+// GET /api/employees/attendance/today
 export const getTodayAttendance = asyncHandler(async (req, res) => {
   const employees = await Employee.find({
     business: req.auth.business,
@@ -74,12 +86,12 @@ export const getTodayAttendance = asyncHandler(async (req, res) => {
       employeeId: e._id,
       name: e.name,
       position: e.position,
-      status: recordMap[e._id.toString()] || null, // null = not yet marked today
+      status: recordMap[e._id.toString()] || null,
     })),
   );
 });
 
-// POST /api/employees/:id/attendance — mark (or update) today's attendance for one employee
+// POST /api/employees/:id/attendance
 export const markAttendance = asyncHandler(async (req, res) => {
   const { status, date } = req.body;
   if (!["present", "absent", "late", "leave"].includes(status)) {
@@ -107,7 +119,7 @@ export const markAttendance = asyncHandler(async (req, res) => {
   res.json(record);
 });
 
-// GET /api/employees/:id/attendance — full attendance history for one employee
+// GET /api/employees/:id/attendance
 export const getEmployeeAttendance = asyncHandler(async (req, res) => {
   const records = await Attendance.find({
     business: req.auth.business,
@@ -128,12 +140,23 @@ export const getLeaveRequests = asyncHandler(async (req, res) => {
   res.json(requests);
 });
 
-// POST /api/employees/:id/leave-requests
+// POST /api/employees/:id/leave-requests (a manager records it on the employee's behalf)
 export const createLeaveRequest = asyncHandler(async (req, res) => {
   const { startDate, endDate, reason } = req.body;
-  if (!startDate || !endDate) {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  if (!startDate || !endDate || isNaN(start) || isNaN(end)) {
     res.status(400);
     throw new Error("Start and end date are required");
+  }
+  if (end < start) {
+    res.status(400);
+    throw new Error("The end date cannot be before the start date");
+  }
+  if (daysBetween(start, end).length > 60) {
+    res.status(400);
+    throw new Error("Leave cannot be longer than 60 days at a time");
   }
 
   const employee = await Employee.findOne({
@@ -144,33 +167,63 @@ export const createLeaveRequest = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Employee not found");
   }
+  if (employee.status !== "active") {
+    res.status(400);
+    throw new Error("This employee is inactive");
+  }
 
   const request = await LeaveRequest.create({
     business: req.auth.business,
     employee: employee._id,
-    startDate,
-    endDate,
-    reason,
+    startDate: start,
+    endDate: end,
+    reason: reason?.trim() || undefined,
   });
   res.status(201).json(request);
 });
 
-// POST /api/employees/leave-requests/:id/review — approve or reject
+// POST /api/employees/leave-requests/:id/review
 export const reviewLeaveRequest = asyncHandler(async (req, res) => {
-  const { decision } = req.body; // 'approved' | 'rejected'
+  const { decision } = req.body;
   if (!["approved", "rejected"].includes(decision)) {
     res.status(400);
     throw new Error('Decision must be "approved" or "rejected"');
   }
 
-  const request = await LeaveRequest.findOneAndUpdate(
-    { _id: req.params.id, business: req.auth.business },
-    { status: decision, reviewedBy: req.auth.id },
-    { new: true },
-  );
+  const request = await LeaveRequest.findOne({
+    _id: req.params.id,
+    business: req.auth.business,
+  });
   if (!request) {
     res.status(404);
     throw new Error("Leave request not found");
   }
+  if (request.status !== "pending") {
+    res.status(400);
+    throw new Error("This request was already reviewed");
+  }
+
+  request.status = decision;
+  request.reviewedBy = req.auth.id;
+  await request.save();
+
+  // Approved leave shows up as "Leave" in the attendance sheet for every day it covers
+  if (decision === "approved") {
+    const days = daysBetween(request.startDate, request.endDate);
+    await Attendance.bulkWrite(
+      days.map((date) => ({
+        updateOne: {
+          filter: {
+            business: req.auth.business,
+            employee: request.employee,
+            date,
+          },
+          update: { $set: { status: "leave", recordedBy: req.auth.id } },
+          upsert: true,
+        },
+      })),
+    );
+  }
+
   res.json(request);
 });
