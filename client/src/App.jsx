@@ -24,6 +24,7 @@ import DashboardLayout from "./components/layout/DashboardLayout";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 import PlanGate from "./components/PlanGate";
+import SubscriptionReturn from "./pages/SubscriptionReturn";
 
 export default function App() {
   return (
@@ -54,6 +55,7 @@ export default function App() {
           <Route path="expenses" element={<Expenses />} />
           <Route path="finance" element={<Finance />} />
           <Route path="reports" element={<Reports />} />
+          <Route path="subscription/return" element={<SubscriptionReturn />} />
           <Route
             path="ai"
             element={
