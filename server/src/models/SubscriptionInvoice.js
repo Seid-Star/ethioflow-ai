@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+
 const invoiceSchema = new mongoose.Schema(
   {
     business: {
@@ -11,14 +12,30 @@ const invoiceSchema = new mongoose.Schema(
     billingCycle: { type: String, enum: ["monthly", "yearly"], required: true },
     amount: { type: Number, required: true },
     currency: { type: String, default: "ETB" },
-    status: { type: String, default: "paid" },
-    paymentMethod: { type: String, required: true },
+
+    status: {
+      type: String,
+      enum: ["pending", "paid", "failed", "expired"],
+      default: "paid",
+    },
+    mode: { type: String, enum: ["demo", "live"], default: "demo" },
+    providerMode: String,
+    paymentMethod: String,
+
     reference: { type: String, required: true },
-    mode: { type: String, default: "demo" }, // no real payment gateway yet
+    txRef: String,
+    providerReference: String,
+    checkoutUrl: String,
+    failureReason: String,
+
+    paidAt: Date,
     periodStart: Date,
     periodEnd: Date,
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true },
 );
+
+invoiceSchema.index({ txRef: 1 }, { unique: true, sparse: true });
+
 export default mongoose.model("SubscriptionInvoice", invoiceSchema);
