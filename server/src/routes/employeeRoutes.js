@@ -7,8 +7,9 @@ import {
   createEmployee,
   updateEmployee,
   deactivateEmployee,
-  getTodayAttendance,
-  markAttendance,
+  getAttendanceSheet,
+  saveAttendanceBulk,
+  getAttendanceRecords,
   getEmployeeAttendance,
   getLeaveRequests,
   createLeaveRequest,
@@ -43,8 +44,13 @@ router.put(
 );
 router.delete("/:id", authorize("owner", "manager"), deactivateEmployee);
 
-router.get("/attendance/today", getTodayAttendance);
-router.post("/:id/attendance", authorize("owner", "manager"), markAttendance);
+router.get("/attendance", getAttendanceSheet);
+router.get("/attendance/records", getAttendanceRecords);
+router.post(
+  "/attendance/bulk",
+  authorize("owner", "manager"),
+  saveAttendanceBulk,
+);
 router.get("/:id/attendance", getEmployeeAttendance);
 
 router.get("/leave-requests", getLeaveRequests);
