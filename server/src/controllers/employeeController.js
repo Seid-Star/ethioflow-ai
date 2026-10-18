@@ -1,7 +1,11 @@
+import mongoose from "mongoose";
 import asyncHandler from "express-async-handler";
 import Employee from "../models/Employee.js";
 import Attendance from "../models/Attendance.js";
 import LeaveRequest from "../models/LeaveRequest.js";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const STATUSES = ["present", "late", "absent", "leave"];
 
 function startOfDay(date = new Date()) {
   const d = new Date(date);
@@ -9,7 +13,18 @@ function startOfDay(date = new Date()) {
   return d;
 }
 
-// Every calendar day from start to end, capped so a typo can't create thousands of records
+function parseDay(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ""));
+  if (!match) return null;
+  const [, y, m, d] = match.map(Number);
+  const day = new Date(y, m - 1, d);
+  return day.getDate() === d ? day : null;
+}
+
+function isFutureDay(day) {
+  return day.getTime() > startOfDay(new Date(Date.now() + DAY_MS)).getTime();
+}
+
 function daysBetween(start, end) {
   const days = [];
   const d = startOfDay(start);
@@ -21,7 +36,6 @@ function daysBetween(start, end) {
   return days;
 }
 
-// GET /api/employees
 export const getEmployees = asyncHandler(async (req, res) => {
   const employees = await Employee.find({ business: req.auth.business }).sort(
     "name",
@@ -29,7 +43,6 @@ export const getEmployees = asyncHandler(async (req, res) => {
   res.json(employees);
 });
 
-// POST /api/employees
 export const createEmployee = asyncHandler(async (req, res) => {
   const employee = await Employee.create({
     ...req.body,
@@ -38,7 +51,6 @@ export const createEmployee = asyncHandler(async (req, res) => {
   res.status(201).json(employee);
 });
 
-// PUT /api/employees/:id
 export const updateEmployee = asyncHandler(async (req, res) => {
   const employee = await Employee.findOneAndUpdate(
     { _id: req.params.id, business: req.auth.business },
@@ -52,7 +64,6 @@ export const updateEmployee = asyncHandler(async (req, res) => {
   res.json(employee);
 });
 
-// DELETE /api/employees/:id (deactivates, keeps attendance/leave history intact)
 export const deactivateEmployee = asyncHandler(async (req, res) => {
   const employee = await Employee.findOneAndUpdate(
     { _id: req.params.id, business: req.auth.business },
@@ -66,60 +77,149 @@ export const deactivateEmployee = asyncHandler(async (req, res) => {
   res.json(employee);
 });
 
-// GET /api/employees/attendance/today
-export const getTodayAttendance = asyncHandler(async (req, res) => {
+export const getAttendanceSheet = asyncHandler(async (req, res) => {
+  const day = parseDay(req.query.date) || startOfDay();
+
   const employees = await Employee.find({
     business: req.auth.business,
     status: "active",
   }).sort("name");
-  const today = startOfDay();
-
   const records = await Attendance.find({
     business: req.auth.business,
-    date: today,
+    date: day,
   });
-  const recordMap = {};
-  for (const r of records) recordMap[r.employee.toString()] = r.status;
 
-  res.json(
-    employees.map((e) => ({
+  const statusById = {};
+  for (const r of records) statusById[r.employee.toString()] = r.status;
+
+  res.json({
+    date: req.query.date,
+    rows: employees.map((e) => ({
       employeeId: e._id,
       name: e.name,
       position: e.position,
-      status: recordMap[e._id.toString()] || null,
+      department: e.department,
+      status: statusById[e._id.toString()] || null,
     })),
-  );
-});
-
-// POST /api/employees/:id/attendance
-export const markAttendance = asyncHandler(async (req, res) => {
-  const { status, date } = req.body;
-  if (!["present", "absent", "late", "leave"].includes(status)) {
-    res.status(400);
-    throw new Error("Invalid attendance status");
-  }
-
-  const employee = await Employee.findOne({
-    _id: req.params.id,
-    business: req.auth.business,
   });
-  if (!employee) {
-    res.status(404);
-    throw new Error("Employee not found");
-  }
-
-  const day = startOfDay(date ? new Date(date) : new Date());
-
-  const record = await Attendance.findOneAndUpdate(
-    { business: req.auth.business, employee: employee._id, date: day },
-    { status, recordedBy: req.auth.id },
-    { new: true, upsert: true, runValidators: true },
-  );
-
-  res.json(record);
 });
 
-// GET /api/employees/:id/attendance
+export const saveAttendanceBulk = asyncHandler(async (req, res) => {
+  const { date, records } = req.body;
+
+  const day = parseDay(date);
+  if (!day) {
+    res.status(400);
+    throw new Error("A valid date is required (YYYY-MM-DD)");
+  }
+  if (isFutureDay(day)) {
+    res.status(400);
+    throw new Error("Attendance cannot be recorded for a future date");
+  }
+  if (!Array.isArray(records) || records.length === 0) {
+    res.status(400);
+    throw new Error("There is no attendance to save");
+  }
+  if (records.length > 500) {
+    res.status(400);
+    throw new Error("Too many records in one save");
+  }
+
+  const byEmployee = new Map();
+  for (const r of records) {
+    if (
+      !mongoose.isValidObjectId(r?.employeeId) ||
+      !STATUSES.includes(r?.status)
+    ) {
+      res.status(400);
+      throw new Error("Each record needs a valid employee and status");
+    }
+    byEmployee.set(String(r.employeeId), r.status);
+  }
+
+  const valid = await Employee.find({
+    business: req.auth.business,
+    status: "active",
+    _id: { $in: [...byEmployee.keys()] },
+  }).select("_id");
+
+  if (valid.length !== byEmployee.size) {
+    res.status(400);
+    throw new Error(
+      "Some employees could not be found. Refresh the page and try again.",
+    );
+  }
+
+  await Attendance.bulkWrite(
+    [...byEmployee.entries()].map(([employeeId, status]) => ({
+      updateOne: {
+        filter: {
+          business: req.auth.business,
+          employee: employeeId,
+          date: day,
+        },
+        update: { $set: { status, recordedBy: req.auth.id } },
+        upsert: true,
+      },
+    })),
+    { ordered: false },
+  );
+
+  res.json({ saved: byEmployee.size, date });
+});
+
+export const getAttendanceRecords = asyncHandler(async (req, res) => {
+  const match = /^(\d{4})-(\d{2})$/.exec(String(req.query.month || ""));
+  const now = new Date();
+  const year = match ? Number(match[1]) : now.getFullYear();
+  const month = match ? Number(match[2]) : now.getMonth() + 1;
+
+  if (month < 1 || month > 12) {
+    res.status(400);
+    throw new Error("Invalid month");
+  }
+
+  const start = new Date(year, month - 1, 1);
+  const end = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month, 0).getDate();
+
+  const [employees, records] = await Promise.all([
+    Employee.find({ business: req.auth.business }).sort("name"),
+    Attendance.find({
+      business: req.auth.business,
+      date: { $gte: start, $lt: end },
+    }),
+  ]);
+
+  const byEmployee = {};
+  for (const r of records) {
+    const key = r.employee.toString();
+    (byEmployee[key] ||= {})[r.date.getDate()] = r.status;
+  }
+
+  const rows = employees
+    .filter((e) => e.status === "active" || byEmployee[e._id.toString()])
+    .map((e) => {
+      const days = byEmployee[e._id.toString()] || {};
+      const counts = { present: 0, late: 0, absent: 0, leave: 0 };
+      for (const status of Object.values(days)) counts[status] += 1;
+      return {
+        employeeId: e._id,
+        name: e.name,
+        position: e.position,
+        status: e.status,
+        days,
+        counts,
+      };
+    });
+
+  res.json({
+    month: `${year}-${String(month).padStart(2, "0")}`,
+    daysInMonth,
+    rows,
+  });
+});
+
 export const getEmployeeAttendance = asyncHandler(async (req, res) => {
   const records = await Attendance.find({
     business: req.auth.business,
@@ -130,9 +230,6 @@ export const getEmployeeAttendance = asyncHandler(async (req, res) => {
   res.json(records);
 });
 
-// --- Leave requests ---
-
-// GET /api/employees/leave-requests
 export const getLeaveRequests = asyncHandler(async (req, res) => {
   const requests = await LeaveRequest.find({ business: req.auth.business })
     .populate("employee", "name position")
@@ -140,7 +237,6 @@ export const getLeaveRequests = asyncHandler(async (req, res) => {
   res.json(requests);
 });
 
-// POST /api/employees/:id/leave-requests (a manager records it on the employee's behalf)
 export const createLeaveRequest = asyncHandler(async (req, res) => {
   const { startDate, endDate, reason } = req.body;
   const start = new Date(startDate);
@@ -181,8 +277,6 @@ export const createLeaveRequest = asyncHandler(async (req, res) => {
   });
   res.status(201).json(request);
 });
-
-// POST /api/employees/leave-requests/:id/review
 export const reviewLeaveRequest = asyncHandler(async (req, res) => {
   const { decision } = req.body;
   if (!["approved", "rejected"].includes(decision)) {
@@ -206,8 +300,6 @@ export const reviewLeaveRequest = asyncHandler(async (req, res) => {
   request.status = decision;
   request.reviewedBy = req.auth.id;
   await request.save();
-
-  // Approved leave shows up as "Leave" in the attendance sheet for every day it covers
   if (decision === "approved") {
     const days = daysBetween(request.startDate, request.endDate);
     await Attendance.bulkWrite(
