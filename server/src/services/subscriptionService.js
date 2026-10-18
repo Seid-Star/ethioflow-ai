@@ -3,9 +3,6 @@ import Product from "../models/Product.js";
 import { PLANS, PLAN_ORDER, TRIAL_DAYS } from "../config/plans.js";
 
 export const DAY = 24 * 60 * 60 * 1000;
-
-// Loads the business and quietly keeps its subscription state honest:
-// starts a trial for accounts that never had one, and expires anything that has run out.
 export async function loadSubscription(businessId) {
   const biz = await Business.findById(businessId);
   if (!biz) return null;
@@ -36,8 +33,6 @@ export async function loadSubscription(businessId) {
   if (dirty) await biz.save();
   return biz;
 }
-
-// The plan whose features the business can use right now
 export function effectivePlanOf(biz) {
   if (biz.subscriptionStatus === "trialing") return "professional";
   if (
@@ -60,6 +55,7 @@ export async function describeSubscription(biz) {
   });
 
   return {
+    businessName: biz.name,
     plan,
     paidPlan: biz.subscriptionPlan,
     status: biz.subscriptionStatus,
