@@ -5,9 +5,10 @@ import {
   CreditCard,
   Smartphone,
   Landmark,
-  Receipt,
+  Receipt as ReceiptIcon,
   AlertTriangle,
   CheckCircle2,
+  ShieldCheck,
 } from "lucide-react";
 import { api } from "../api/axios";
 import { useAuthStore } from "../store/authStore";
@@ -18,7 +19,9 @@ import {
 import { PLANS, priceFor, planName } from "../lib/plans";
 import Modal from "../components/ui/Modal";
 
-const methods = [
+import Receipt from "../components/billing/Receipt";
+
+const demoMethods = [
   { value: "mobile_money", label: "Mobile Money", icon: Smartphone },
   { value: "bank_transfer", label: "Bank Transfer", icon: Landmark },
   { value: "card", label: "Card", icon: CreditCard },
@@ -26,22 +29,39 @@ const methods = [
 
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString() : "");
 
+const STATUS_STYLE = {
+  paid: "bg-emerald-100 text-emerald-700",
+  pending: "bg-amber-100 text-amber-800",
+  failed: "bg-red-100 text-red-700",
+  expired: "bg-gray-100 text-gray-600",
+};
+
+function statusLabel(inv) {
+  if (inv.status === "paid") {
+    if (inv.providerMode === "test") return "Paid (test)";
+    if (inv.mode === "demo") return "Paid (demo)";
+    return "Paid";
+  }
+  return inv.status.charAt(0).toUpperCase() + inv.status.slice(1);
+}
+
 export default function Subscription() {
   const user = useAuthStore((s) => s.user);
   const isOwner = user?.role === "owner";
   const { sub, loading } = useSubscription();
   const [cycle, setCycle] = useState("monthly");
   const [invoices, setInvoices] = useState([]);
+  const [receiptInvoice, setReceiptInvoice] = useState(null);
   const [checkoutPlan, setCheckoutPlan] = useState(null);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [checking, setChecking] = useState(null);
+  const [invoiceError, setInvoiceError] = useState("");
 
   async function loadInvoices() {
     try {
       const { data } = await api.get("/subscription/invoices");
       setInvoices(data);
-    } catch {
-      // the invoice list is a nice-to-have; the page still works without it
-    }
+    } catch {}
   }
 
   useEffect(() => {
@@ -51,6 +71,21 @@ export default function Subscription() {
   function afterChange() {
     notifySubscriptionChanged();
     loadInvoices();
+  }
+
+  async function checkInvoice(inv) {
+    setChecking(inv._id);
+    setInvoiceError("");
+    try {
+      await api.post("/subscription/verify", { txRef: inv.txRef });
+      afterChange();
+    } catch (err) {
+      setInvoiceError(
+        err?.response?.data?.message || "Could not check that payment",
+      );
+    } finally {
+      setChecking(null);
+    }
   }
 
   if (loading || !sub)
@@ -103,7 +138,6 @@ export default function Subscription() {
         </p>
       </div>
 
-      {/* Current plan */}
       <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-br from-forest-950 to-forest-700 p-6 text-white">
         <Crown
           size={110}
@@ -138,16 +172,20 @@ export default function Subscription() {
         </p>
       )}
 
-      {/* Billing cycle toggle */}
-      <div className="mb-5 flex items-center justify-center gap-1 self-center">
+      {!sub.paymentsLive && isOwner && (
+        <p className="mb-6 flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <AlertTriangle size={15} /> Demo billing: no payment provider is
+          connected, so choosing a plan records an invoice but charges nothing.
+        </p>
+      )}
+
+      <div className="mb-5 flex items-center justify-center">
         <div className="flex rounded-full border border-black/10 bg-white p-1">
           {["monthly", "yearly"].map((c) => (
             <button
               key={c}
               onClick={() => setCycle(c)}
-              className={`rounded-full px-5 py-1.5 text-sm font-medium capitalize ${
-                cycle === c ? "bg-forest-900 text-white" : "text-ink-900/60"
-              }`}
+              className={`rounded-full px-5 py-1.5 text-sm font-medium capitalize ${cycle === c ? "bg-forest-900 text-white" : "text-ink-900/60"}`}
             >
               {c}
               {c === "yearly" && (
@@ -160,7 +198,6 @@ export default function Subscription() {
         </div>
       </div>
 
-      {/* Plan cards */}
       <div className="mb-10 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {PLANS.map((plan) => {
           const btn = buttonFor(plan);
@@ -244,15 +281,19 @@ export default function Subscription() {
         })}
       </div>
 
-      {/* Billing history */}
       <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-forest-950">
-        <Receipt size={14} /> Billing history
+        <ReceiptIcon size={14} /> Billing history
       </h2>
+      {invoiceError && (
+        <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+          {invoiceError}
+        </p>
+      )}
       <div className="overflow-x-auto rounded-2xl border border-black/5 bg-white">
         {invoices.length === 0 ? (
           <p className="p-6 text-sm text-ink-900/50">No invoices yet.</p>
         ) : (
-          <table className="w-full min-w-[640px] text-sm">
+          <table className="w-full min-w-[720px] text-sm">
             <thead className="bg-forest-50 text-left text-xs uppercase text-ink-900/50">
               <tr>
                 <th className="px-5 py-3">Date</th>
@@ -276,15 +317,40 @@ export default function Subscription() {
                     {inv.plan} ({inv.billingCycle})
                   </td>
                   <td className="px-5 py-3 capitalize text-ink-900/60">
-                    {inv.paymentMethod.replace("_", " ")}
+                    {inv.paymentMethod
+                      ? inv.paymentMethod.replace(/_/g, " ")
+                      : "—"}
                   </td>
                   <td className="px-5 py-3 text-right font-semibold">
                     {inv.amount.toLocaleString()} ETB
                   </td>
                   <td className="px-5 py-3">
-                    <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                      Paid{inv.mode === "demo" ? " (demo)" : ""}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLE[inv.status] || STATUS_STYLE.expired}`}
+                      >
+                        {statusLabel(inv)}
+                      </span>
+                      {inv.status === "paid" && (
+                        <button
+                          onClick={() => setReceiptInvoice(inv)}
+                          className="text-xs font-medium text-forest-700 hover:underline"
+                        >
+                          Receipt
+                        </button>
+                      )}
+                      {inv.mode === "live" && inv.status !== "paid" && (
+                        <button
+                          onClick={() => checkInvoice(inv)}
+                          disabled={checking === inv._id}
+                          className="text-xs font-medium text-forest-700 hover:underline disabled:opacity-50"
+                        >
+                          {checking === inv._id
+                            ? "Checking..."
+                            : "Check status"}
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -297,6 +363,7 @@ export default function Subscription() {
         <CheckoutModal
           plan={checkoutPlan}
           cycle={cycle}
+          live={sub.paymentsLive}
           onClose={() => setCheckoutPlan(null)}
           onDone={afterChange}
         />
@@ -309,11 +376,16 @@ export default function Subscription() {
           onDone={afterChange}
         />
       )}
+      {receiptInvoice && (
+        <Modal isOpen onClose={() => setReceiptInvoice(null)} title="Receipt">
+          <Receipt invoice={receiptInvoice} businessName={sub.businessName} />
+        </Modal>
+      )}
     </div>
   );
 }
 
-function CheckoutModal({ plan, cycle, onClose, onDone }) {
+function CheckoutModal({ plan, cycle, live, onClose, onDone }) {
   const [method, setMethod] = useState("mobile_money");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -324,6 +396,14 @@ function CheckoutModal({ plan, cycle, onClose, onDone }) {
     setSubmitting(true);
     setError("");
     try {
+      if (live) {
+        const { data } = await api.post("/subscription/checkout", {
+          plan: plan.id,
+          billingCycle: cycle,
+        });
+        window.location.assign(data.checkoutUrl);
+        return;
+      }
       const { data } = await api.post("/subscription/checkout", {
         plan: plan.id,
         billingCycle: cycle,
@@ -333,14 +413,13 @@ function CheckoutModal({ plan, cycle, onClose, onDone }) {
       onDone();
     } catch (err) {
       setError(err?.response?.data?.message || "Payment failed");
-    } finally {
       setSubmitting(false);
     }
   }
 
   if (invoice) {
     return (
-      <Modal isOpen onClose={onClose} title="Payment complete">
+      <Modal isOpen onClose={onClose} title="Plan changed">
         <div className="text-center">
           <CheckCircle2 size={44} className="mx-auto mb-3 text-emerald-500" />
           <p className="mb-1 text-lg font-bold text-forest-950">
@@ -386,26 +465,35 @@ function CheckoutModal({ plan, cycle, onClose, onDone }) {
         </div>
       </div>
 
-      <p className="mb-2 text-xs font-medium text-ink-900/70">Pay with</p>
-      <div className="mb-4 grid grid-cols-3 gap-2">
-        {methods.map(({ value, label, icon: Icon }) => (
-          <button
-            key={value}
-            onClick={() => setMethod(value)}
-            className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-xs font-medium ${
-              method === value
-                ? "border-forest-700 bg-forest-50 text-forest-900"
-                : "border-black/10 text-ink-900/60 hover:bg-black/5"
-            }`}
-          >
-            <Icon size={18} /> {label}
-          </button>
-        ))}
-      </div>
-
-      <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-        Demo mode: this records an invoice but charges nothing.
-      </p>
+      {live ? (
+        <p className="mb-4 flex items-start gap-2 rounded-lg bg-forest-50 px-3 py-2.5 text-xs text-ink-900/65">
+          <ShieldCheck size={15} className="mt-0.5 shrink-0 text-forest-700" />
+          You'll be taken to Chapa's secure payment page to choose how to pay.
+          Your plan switches on only after Chapa confirms the payment.
+        </p>
+      ) : (
+        <>
+          <p className="mb-2 text-xs font-medium text-ink-900/70">Pay with</p>
+          <div className="mb-4 grid grid-cols-3 gap-2">
+            {demoMethods.map(({ value, label, icon: Icon }) => (
+              <button
+                key={value}
+                onClick={() => setMethod(value)}
+                className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-xs font-medium ${
+                  method === value
+                    ? "border-forest-700 bg-forest-50 text-forest-900"
+                    : "border-black/10 text-ink-900/60 hover:bg-black/5"
+                }`}
+              >
+                <Icon size={18} /> {label}
+              </button>
+            ))}
+          </div>
+          <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            Demo mode: this records an invoice but charges nothing.
+          </p>
+        </>
+      )}
 
       <button
         onClick={pay}
@@ -413,8 +501,12 @@ function CheckoutModal({ plan, cycle, onClose, onDone }) {
         className="w-full rounded-full bg-gold-500 py-2.5 text-sm font-semibold text-forest-950 hover:bg-gold-600 disabled:opacity-50"
       >
         {submitting
-          ? "Processing..."
-          : `Pay ${amount.toLocaleString()} ETB (demo)`}
+          ? live
+            ? "Taking you to Chapa..."
+            : "Processing..."
+          : live
+            ? `Pay ${amount.toLocaleString()} ETB with Chapa`
+            : `Pay ${amount.toLocaleString()} ETB (demo)`}
       </button>
     </Modal>
   );
