@@ -15,8 +15,6 @@ export const AUDIT_CATEGORIES = [
   "subscription",
 ];
 
-// Each rule: which request to watch, what to call it, and how to describe it in plain words.
-// describe({ req, body, match }) gets the request, the JSON the server replied with, and the URL match.
 export const AUDIT_RULES = [
   {
     method: "POST",
@@ -262,8 +260,20 @@ export const AUDIT_RULES = [
     path: /^\/api\/subscription\/checkout$/,
     action: "subscription.change",
     describe: ({ body }) => ({
-      summary: `Switched to the ${cap(body?.invoice?.plan)} plan (${body?.invoice?.billingCycle}) - ${money(body?.invoice?.amount)}`,
+      summary:
+        body?.mode === "demo"
+          ? `Switched to the ${cap(body?.invoice?.plan)} plan (demo) - ${money(body?.invoice?.amount)}`
+          : `Started a payment for the ${cap(body?.invoice?.plan)} plan - ${money(body?.invoice?.amount)}`,
       entityType: "subscription",
+    }),
+  },
+  {
+    method: "POST",
+    path: /^\/api\/employees\/attendance\/bulk$/,
+    action: "employee.attendance",
+    describe: ({ req, body }) => ({
+      summary: `Saved attendance for ${plural(body?.saved || 0, "employee")} on ${req.body?.date}`,
+      entityType: "attendance",
     }),
   },
   {
