@@ -4,18 +4,17 @@ import { Menu, X } from "lucide-react";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import SyncManager from "./SyncManager";
+import CalculatorLauncher from "../calculator/CalculatorLauncher";
 
 export default function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div className="flex h-screen bg-cream-50">
-      {/* Desktop sidebar */}
       <div className="hidden lg:block">
         <Sidebar />
       </div>
 
-      {/* Mobile sidebar: always mounted, animated via transform/opacity */}
       <div
         className={`fixed inset-0 z-50 lg:hidden ${mobileOpen ? "" : "pointer-events-none"}`}
         aria-hidden={!mobileOpen}
@@ -60,6 +59,7 @@ export default function DashboardLayout() {
         </main>
       </div>
       <SyncManager />
+      <CalculatorLauncher />
     </div>
   );
 }
