@@ -14,10 +14,18 @@ export default function Settings() {
             <span className="text-ink-900/60">Name</span>
             <span className="font-medium text-forest-950">{user?.name}</span>
           </div>
-          <div className="flex justify-between border-b border-black/5 pb-3">
-            <span className="text-ink-900/60">Email</span>
-            <span className="font-medium text-forest-950">{user?.email}</span>
-          </div>
+          {user?.email && (
+            <div className="flex justify-between border-b border-black/5 pb-3">
+              <span className="text-ink-900/60">Email</span>
+              <span className="font-medium text-forest-950">{user.email}</span>
+            </div>
+          )}
+          {user?.phone && (
+            <div className="flex justify-between border-b border-black/5 pb-3">
+              <span className="text-ink-900/60">Phone</span>
+              <span className="font-medium text-forest-950">{user.phone}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-ink-900/60">Role</span>
             <span className="font-medium capitalize text-forest-950">
