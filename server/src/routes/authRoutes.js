@@ -6,6 +6,8 @@ import {
   refresh,
   logout,
   me,
+  verifyEmail,
+  resendVerification,
 } from "../controllers/authController.js";
 import { protect } from "../middleware/auth.js";
 import { validateRegister, validateLogin } from "../validators/index.js";
@@ -13,19 +15,27 @@ import { validate } from "../middleware/validate.js";
 
 const router = Router();
 
-// Slows down brute-force password guessing
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 20,
   message: { message: "Too many attempts, please try again later." },
 });
 
-router.post("/register", authLimiter, register);
-router.post("/login", authLimiter, login);
+const resendLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 6,
+  message: {
+    message:
+      "Too many emails requested. Please wait a few minutes and try again.",
+  },
+});
+
+router.post("/register", authLimiter, validateRegister, validate, register);
+router.post("/login", authLimiter, validateLogin, validate, login);
+router.post("/verify-email", authLimiter, verifyEmail);
+router.post("/resend-verification", resendLimiter, resendVerification);
 router.post("/refresh", refresh);
 router.post("/logout", logout);
 router.get("/me", protect, me);
-router.post("/register", authLimiter, validateRegister, validate, register);
-router.post("/login", authLimiter, validateLogin, validate, login);
 
 export default router;
