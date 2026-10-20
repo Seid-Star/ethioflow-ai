@@ -25,12 +25,19 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Only attempt a refresh on a 401 that hasn't already been retried
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const isAuthCall =
+      /\/auth\/(login|register|refresh|verify-email|resend-verification)/.test(
+        originalRequest?.url || "",
+      );
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isAuthCall
+    ) {
       originalRequest._retry = true;
 
       if (isRefreshing) {
-        // Another request already triggered a refresh — wait for it instead of firing a second one
         return new Promise((resolve) => {
           pendingRequests.push((newToken) => {
             originalRequest.headers.Authorization = `Bearer ${newToken}`;
