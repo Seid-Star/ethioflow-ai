@@ -25,7 +25,7 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 import PlanGate from "./components/PlanGate";
 import SubscriptionReturn from "./pages/SubscriptionReturn";
-
+import VerifyEmail from "./pages/VerifyEmail";
 export default function App() {
   return (
     <ErrorBoundary>
@@ -33,6 +33,7 @@ export default function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
 
         <Route
           path="/dashboard"
