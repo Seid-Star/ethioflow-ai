@@ -7,16 +7,17 @@ export const validateRegister = [
     .withMessage("Business name is required"),
   body("ownerName").trim().notEmpty().withMessage("Owner name is required"),
   body("email")
+    .optional({ values: "falsy" })
+    .trim()
     .isEmail()
-    .withMessage("A valid email is required")
-    .normalizeEmail(),
+    .withMessage("Enter a valid email address"),
+  body("phone").optional({ values: "falsy" }).trim(),
   body("password")
     .isLength({ min: 6 })
     .withMessage("Password must be at least 6 characters"),
 ];
 
 export const validateLogin = [
-  body("email").isEmail().withMessage("A valid email is required"),
   body("password").notEmpty().withMessage("Password is required"),
 ];
 
