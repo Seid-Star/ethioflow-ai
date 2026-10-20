@@ -76,9 +76,10 @@ async function createBusinessAndOwner() {
     business: business._id,
     name: "Abebe Kebede",
     email: DEMO_EMAIL,
-    phone: "0911000000",
+    phone: "0911200099",
     password: "Demo1234",
     role: "owner",
+    emailVerified: true,
   });
 
   // A paid yearly invoice, so the billing history isn't empty
