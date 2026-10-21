@@ -26,11 +26,13 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import PlanGate from "./components/PlanGate";
 import SubscriptionReturn from "./pages/SubscriptionReturn";
 import VerifyEmail from "./pages/VerifyEmail";
+import StartScreen from "./pages/StartScreen";
 export default function App() {
   return (
     <ErrorBoundary>
       <Routes>
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={<StartScreen />} />
+        <Route path="/home" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
