@@ -104,11 +104,11 @@ export async function getCashFlow(businessId, from, to) {
   const refunds = await getRefundTotals(businessId, from, to);
 
   const cashIn = cashInFromSales?.total || 0;
-  const cashOut = expensesTotal + refunds.cashAmount; // money handed back to customers leaves the till
+  const cashOut = expensesTotal + refunds.cashAmount;
 
   return { cashIn, cashOut, netCashFlow: cashIn - cashOut };
 }
-// Total operating expenses in the window (rent, salary, utilities, etc.)
+
 export async function getExpensesTotal(businessId, from, to) {
   const match = { business: new mongoose.Types.ObjectId(businessId) };
   const range = dateRange(from, to);
