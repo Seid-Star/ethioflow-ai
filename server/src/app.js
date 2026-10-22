@@ -25,8 +25,7 @@ import auditRoutes from "./routes/auditRoutes.js";
 import { auditTrail } from "./middleware/auditTrail.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
 
-// Strips MongoDB operator keys ($gt, $ne, dotted keys) from the request body.
-// Written by hand because express-mongo-sanitize breaks on Express 5.
+import contactRoutes from "./routes/contactRoutes.js";
 function sanitizeMongoOperators(obj) {
   if (Array.isArray(obj)) {
     obj.forEach(sanitizeMongoOperators);
@@ -111,7 +110,7 @@ app.use("/api/ocr", ocrRoutes);
 app.use("/api/employees", employeeRoutes);
 app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/audit-logs", auditRoutes);
-
+app.use("/api/contact", contactRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
