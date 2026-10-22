@@ -13,7 +13,7 @@ export default function Landing() {
     <div className="min-h-screen">
       <Navbar />
       <Hero />
-      <FeatureStrip />
+      {/* <FeatureStrip /> */}
       <PlatformOverview />
       <Features />
       <Pricing />
