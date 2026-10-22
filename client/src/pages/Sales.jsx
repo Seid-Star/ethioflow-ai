@@ -48,197 +48,219 @@ export default function Sales() {
   );
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-forest-950">Sales History</h1>
-        <p className="text-sm text-ink-900/60">
+    <div className="mx-auto w-full max-w-7xl space-y-6">
+      <div className="flex flex-col gap-2 border-b border-forest-100 pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <h1 className="text-2xl font-bold tracking-tight text-forest-950 sm:text-3xl">
+          Sales History
+        </h1>
+        <p className="text-sm text-ink-900/60 sm:text-base">
           Every sale, with receipts and refunds
         </p>
       </div>
 
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl bg-forest-50 p-5">
-          <p className="mb-1 text-xs uppercase tracking-wide text-ink-900/50">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 sm:gap-4">
+        <div className="rounded-2xl border border-forest-100 bg-gradient-to-br from-forest-50 to-white p-4 shadow-sm sm:p-5">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-900/50">
             Recent Sales
           </p>
-          <p className="text-2xl font-bold text-forest-950">{sales.length}</p>
+          <p className="text-2xl font-bold tracking-tight text-forest-950 sm:text-3xl">
+            {sales.length}
+          </p>
         </div>
-        <div className="rounded-2xl bg-emerald-50 p-5">
-          <p className="mb-1 text-xs uppercase tracking-wide text-emerald-700/70">
+        <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm sm:p-5">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700/70">
             Total Sold
           </p>
-          <p className="text-2xl font-bold text-emerald-700">
+          <p className="break-words text-2xl font-bold tracking-tight text-emerald-700 sm:text-3xl">
             {totalSold.toLocaleString()} ETB
           </p>
         </div>
-        <div className="rounded-2xl bg-amber-50 p-5">
-          <p className="mb-1 text-xs uppercase tracking-wide text-amber-700/70">
+        <div className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm sm:p-5">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700/70">
             Refunded
           </p>
-          <p className="text-2xl font-bold text-amber-700">
+          <p className="break-words text-2xl font-bold tracking-tight text-amber-700 sm:text-3xl">
             {totalRefunded.toLocaleString()} ETB
           </p>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-black/5 bg-white">
+      <div className="overflow-hidden rounded-2xl border border-forest-100 bg-white shadow-sm">
         {loading ? (
-          <p className="p-6 text-sm text-ink-900/50">Loading...</p>
+          <p className="p-8 text-center text-sm text-ink-900/50 sm:p-12">
+            Loading...
+          </p>
         ) : sales.length === 0 ? (
-          <p className="p-6 text-sm text-ink-900/50">No sales yet.</p>
+          <p className="p-8 text-center text-sm text-ink-900/50 sm:p-12">
+            No sales yet.
+          </p>
         ) : (
-          <table className="w-full min-w-[720px] text-sm">
-            <thead className="bg-forest-50 text-left text-xs uppercase text-ink-900/50">
-              <tr>
-                <th className="px-5 py-3">Date</th>
-                <th className="px-5 py-3">Customer</th>
-                <th className="px-5 py-3">Items</th>
-                <th className="px-5 py-3">Total</th>
-                <th className="px-5 py-3">Payment</th>
-                <th className="px-5 py-3">Status</th>
-                <th className="px-5 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {sales.map((s) => {
-                const status = refundStatus(s);
-                const open = expandedId === s._id;
-                return (
-                  <FragmentRow key={s._id}>
-                    <tr
-                      className="cursor-pointer border-t border-black/5 hover:bg-forest-50/50"
-                      onClick={() => setExpandedId(open ? null : s._id)}
-                    >
-                      <td className="px-5 py-3 text-ink-900/60">
-                        {new Date(s.createdAt).toLocaleString()}
-                      </td>
-                      <td className="px-5 py-3 font-medium text-forest-950">
-                        {s.customer?.name || "Walk-in"}
-                      </td>
-                      <td className="px-5 py-3 text-ink-900/60">
-                        {s.items.length} item(s)
-                      </td>
-                      <td className="px-5 py-3 font-semibold">
-                        {s.total.toLocaleString()} ETB
-                      </td>
-                      <td className="px-5 py-3 capitalize text-ink-900/60">
-                        {s.paymentMethod.replace("_", " ")}
-                      </td>
-                      <td className="px-5 py-3">
-                        {status ? (
-                          <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800">
-                            {status}
-                          </span>
-                        ) : (
-                          <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                            Completed
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-5 py-3">
-                        <ChevronDown
-                          size={16}
-                          className={`text-ink-900/30 transition-transform ${open ? "rotate-180" : ""}`}
-                        />
-                      </td>
-                    </tr>
-
-                    {open && (
-                      <tr className="bg-forest-50/40">
-                        <td colSpan={7} className="px-5 py-4">
-                          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            <div>
-                              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-900/50">
-                                Items
-                              </p>
-                              {s.items.map((i, idx) => (
-                                <div
-                                  key={idx}
-                                  className="flex justify-between py-1 text-sm"
-                                >
-                                  <span>
-                                    {i.name} × {i.quantity}
-                                    {i.refundedQuantity > 0 && (
-                                      <span className="ml-2 text-xs text-amber-700">
-                                        ({i.refundedQuantity} refunded)
-                                      </span>
-                                    )}
-                                  </span>
-                                  <span>
-                                    {i.lineTotal.toLocaleString()} ETB
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="text-sm">
-                              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-900/50">
-                                Summary
-                              </p>
-                              <div className="flex justify-between py-0.5 text-ink-900/60">
-                                <span>Subtotal</span>
-                                <span>{s.subtotal.toLocaleString()} ETB</span>
-                              </div>
-                              {s.discount > 0 && (
-                                <div className="flex justify-between py-0.5 text-ink-900/60">
-                                  <span>Discount</span>
-                                  <span>
-                                    -{s.discount.toLocaleString()} ETB
-                                  </span>
-                                </div>
-                              )}
-                              {s.pointsDiscount > 0 && (
-                                <div className="flex justify-between py-0.5 text-gold-600">
-                                  <span>
-                                    Points discount ({s.pointsRedeemed} pts)
-                                  </span>
-                                  <span>
-                                    -{s.pointsDiscount.toLocaleString()} ETB
-                                  </span>
-                                </div>
-                              )}
-                              {s.tax > 0 && (
-                                <div className="flex justify-between py-0.5 text-ink-900/60">
-                                  <span>Tax</span>
-                                  <span>+{s.tax.toLocaleString()} ETB</span>
-                                </div>
-                              )}
-                              <div className="flex justify-between border-t border-black/10 py-1 font-semibold">
-                                <span>Total</span>
-                                <span>{s.total.toLocaleString()} ETB</span>
-                              </div>
-                              {s.refundedTotal > 0 && (
-                                <div className="flex justify-between py-0.5 font-medium text-amber-700">
-                                  <span>Refunded</span>
-                                  <span>
-                                    -{s.refundedTotal.toLocaleString()} ETB
-                                  </span>
-                                </div>
-                              )}
-                              <p className="mt-2 text-xs text-ink-900/45">
-                                Cashier: {s.cashier?.name || "—"}
-                              </p>
-
-                              {canIssueRefunds && canRefund(s) && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setRefundTarget(s);
-                                  }}
-                                  className="mt-3 flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100"
-                                >
-                                  <RotateCcw size={13} /> Refund items
-                                </button>
-                              )}
-                            </div>
-                          </div>
+          <div className="overflow-x-auto overscroll-x-contain">
+            <table className="w-full min-w-[760px] text-left text-sm">
+              <thead className="bg-forest-50 text-[11px] font-semibold uppercase tracking-wider text-forest-900/70">
+                <tr>
+                  <th className="whitespace-nowrap px-4 py-3.5 lg:px-5">
+                    Date
+                  </th>
+                  <th className="whitespace-nowrap px-4 py-3.5 lg:px-5">
+                    Customer
+                  </th>
+                  <th className="whitespace-nowrap px-4 py-3.5 lg:px-5">
+                    Items
+                  </th>
+                  <th className="whitespace-nowrap px-4 py-3.5 lg:px-5">
+                    Total
+                  </th>
+                  <th className="whitespace-nowrap px-4 py-3.5 lg:px-5">
+                    Payment
+                  </th>
+                  <th className="whitespace-nowrap px-4 py-3.5 lg:px-5">
+                    Status
+                  </th>
+                  <th className="whitespace-nowrap px-4 py-3.5 lg:px-5"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {sales.map((s) => {
+                  const status = refundStatus(s);
+                  const open = expandedId === s._id;
+                  return (
+                    <FragmentRow key={s._id}>
+                      <tr
+                        className="cursor-pointer border-t border-forest-100/70 transition-colors hover:bg-forest-50/70"
+                        onClick={() => setExpandedId(open ? null : s._id)}
+                      >
+                        <td className="px-4 py-4 text-ink-900/60 lg:px-5">
+                          {new Date(s.createdAt).toLocaleString()}
+                        </td>
+                        <td className="px-4 py-4 font-semibold text-forest-950 lg:px-5">
+                          {s.customer?.name || "Walk-in"}
+                        </td>
+                        <td className="px-4 py-4 text-ink-900/60 lg:px-5">
+                          {s.items.length} item(s)
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-4 font-semibold text-forest-950 lg:px-5">
+                          {s.total.toLocaleString()} ETB
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-4 capitalize text-ink-900/60 lg:px-5">
+                          {s.paymentMethod.replace("_", " ")}
+                        </td>
+                        <td className="px-4 py-4 lg:px-5">
+                          {status ? (
+                            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800">
+                              {status}
+                            </span>
+                          ) : (
+                            <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                              Completed
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 lg:px-5">
+                          <ChevronDown
+                            size={16}
+                            className={`text-ink-900/30 transition-transform ${open ? "rotate-180" : ""}`}
+                          />
                         </td>
                       </tr>
-                    )}
-                  </FragmentRow>
-                );
-              })}
-            </tbody>
-          </table>
+
+                      {open && (
+                        <tr className="bg-forest-50/60">
+                          <td colSpan={7} className="px-4 py-5 sm:px-6 sm:py-6">
+                            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-8">
+                              <div>
+                                <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-forest-900/55">
+                                  Items
+                                </p>
+                                {s.items.map((i, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="flex items-start justify-between gap-4 border-b border-forest-100/70 py-2 text-sm last:border-0"
+                                  >
+                                    <span className="min-w-0 break-words">
+                                      {i.name} × {i.quantity}
+                                      {i.refundedQuantity > 0 && (
+                                        <span className="ml-2 text-xs text-amber-700">
+                                          ({i.refundedQuantity} refunded)
+                                        </span>
+                                      )}
+                                    </span>
+                                    <span className="shrink-0 whitespace-nowrap">
+                                      {i.lineTotal.toLocaleString()} ETB
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="text-sm">
+                                <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-forest-900/55">
+                                  Summary
+                                </p>
+                                <div className="flex justify-between gap-4 py-1 text-ink-900/60">
+                                  <span>Subtotal</span>
+                                  <span>{s.subtotal.toLocaleString()} ETB</span>
+                                </div>
+                                {s.discount > 0 && (
+                                  <div className="flex justify-between gap-4 py-1 text-ink-900/60">
+                                    <span>Discount</span>
+                                    <span>
+                                      -{s.discount.toLocaleString()} ETB
+                                    </span>
+                                  </div>
+                                )}
+                                {s.pointsDiscount > 0 && (
+                                  <div className="flex justify-between gap-4 py-1 text-gold-600">
+                                    <span>
+                                      Points discount ({s.pointsRedeemed} pts)
+                                    </span>
+                                    <span>
+                                      -{s.pointsDiscount.toLocaleString()} ETB
+                                    </span>
+                                  </div>
+                                )}
+                                {s.tax > 0 && (
+                                  <div className="flex justify-between gap-4 py-1 text-ink-900/60">
+                                    <span>Tax</span>
+                                    <span>+{s.tax.toLocaleString()} ETB</span>
+                                  </div>
+                                )}
+                                <div className="mt-2 flex justify-between gap-4 border-t border-forest-200 pt-3 font-bold text-forest-950">
+                                  <span>Total</span>
+                                  <span>{s.total.toLocaleString()} ETB</span>
+                                </div>
+                                {s.refundedTotal > 0 && (
+                                  <div className="flex justify-between gap-4 py-1 font-medium text-amber-700">
+                                    <span>Refunded</span>
+                                    <span>
+                                      -{s.refundedTotal.toLocaleString()} ETB
+                                    </span>
+                                  </div>
+                                )}
+                                <p className="mt-2 text-xs text-ink-900/45">
+                                  Cashier: {s.cashier?.name || "—"}
+                                </p>
+
+                                {canIssueRefunds && canRefund(s) && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setRefundTarget(s);
+                                    }}
+                                    className="mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-300"
+                                  >
+                                    <RotateCcw size={13} /> Refund items
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </FragmentRow>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -318,33 +340,33 @@ function RefundModal({ sale, onClose, onDone }) {
     <Modal isOpen onClose={onClose} title="Refund Items">
       <form onSubmit={handleSubmit}>
         {error && (
-          <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+          <p className="mb-4 rounded-xl border border-red-100 bg-red-50 px-3 py-3 text-sm text-red-600">
             {error}
           </p>
         )}
 
-        <div className="mb-4 space-y-2">
+        <div className="mb-5 max-h-[42vh] space-y-2 overflow-y-auto pr-1 sm:max-h-[48vh]">
           {sale.items.map((i) => {
             const remaining = i.quantity - (i.refundedQuantity || 0);
             return (
               <div
                 key={i.product}
-                className="flex items-center justify-between rounded-xl border border-black/5 px-3 py-2.5"
+                className="flex items-center justify-between gap-3 rounded-xl border border-forest-100 bg-white px-3 py-3 shadow-sm sm:px-4"
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-forest-950">
                     {i.name}
                   </p>
-                  <p className="text-xs text-ink-900/50">
+                  <p className="mt-1 text-xs text-ink-900/55">
                     {remaining} of {i.quantity} refundable
                   </p>
                 </div>
                 {remaining > 0 ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-2">
                     <button
                       type="button"
                       onClick={() => change(i.product, -1, remaining)}
-                      className="rounded-md border border-black/10 p-1 hover:bg-black/5"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-forest-100 bg-forest-50 text-forest-900 transition-colors hover:bg-forest-100 focus:outline-none focus:ring-2 focus:ring-forest-300"
                     >
                       <Minus size={12} />
                     </button>
@@ -354,7 +376,7 @@ function RefundModal({ sale, onClose, onDone }) {
                     <button
                       type="button"
                       onClick={() => change(i.product, 1, remaining)}
-                      className="rounded-md border border-black/10 p-1 hover:bg-black/5"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-forest-100 bg-forest-50 text-forest-900 transition-colors hover:bg-forest-100 focus:outline-none focus:ring-2 focus:ring-forest-300"
                     >
                       <Plus size={12} />
                     </button>
@@ -369,14 +391,14 @@ function RefundModal({ sale, onClose, onDone }) {
           })}
         </div>
 
-        <div className="mb-3">
-          <label className="mb-1 block text-xs font-medium text-ink-900/70">
+        <div className="mb-4">
+          <label className="mb-1.5 block text-xs font-semibold text-forest-900/80">
             Refund via
           </label>
           <select
             value={method}
             onChange={(e) => setMethod(e.target.value)}
-            className="w-full rounded-lg border border-black/10 px-3 py-2 text-sm outline-none focus:border-forest-700"
+            className="min-h-11 w-full rounded-xl border border-forest-100 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-forest-600 focus:ring-2 focus:ring-forest-100"
           >
             {methods.map((m) => (
               <option key={m.value} value={m.value}>
@@ -387,18 +409,18 @@ function RefundModal({ sale, onClose, onDone }) {
         </div>
 
         <div className="mb-4">
-          <label className="mb-1 block text-xs font-medium text-ink-900/70">
+          <label className="mb-1.5 block text-xs font-semibold text-forest-900/80">
             Reason
           </label>
           <input
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="e.g. Damaged, wrong item"
-            className="w-full rounded-lg border border-black/10 px-3 py-2 text-sm outline-none focus:border-forest-700"
+            className="min-h-11 w-full rounded-xl border border-forest-100 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-forest-600 focus:ring-2 focus:ring-forest-100"
           />
         </div>
 
-        <div className="mb-4 flex justify-between rounded-lg bg-amber-50 px-3 py-2.5 text-sm font-semibold text-amber-900">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3.5 text-sm font-bold text-amber-950">
           <span>Estimated refund</span>
           <span>{estimate.toFixed(2)} ETB</span>
         </div>
@@ -406,7 +428,7 @@ function RefundModal({ sale, onClose, onDone }) {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-full bg-gold-500 py-2.5 text-sm font-semibold text-forest-950 hover:bg-gold-600 disabled:opacity-50"
+          className="min-h-11 w-full rounded-xl bg-gold-500 px-4 py-3 text-sm font-bold text-forest-950 shadow-sm transition-colors hover:bg-gold-600 focus:outline-none focus:ring-2 focus:ring-gold-300 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting ? "Processing..." : "Confirm Refund"}
         </button>
