@@ -11,6 +11,7 @@ export default function Navbar() {
 
   const links = [
     { key: "home", href: "/home" },
+    { key: "platform", href: "#platform-overview" },
     { key: "features", href: "#features" },
     { key: "pricing", href: "#pricing" },
     { key: "about", href: "#about" },
@@ -30,8 +31,8 @@ export default function Navbar() {
   }, []);
 
   return (
-    <header className="absolute top-0 left-0 right-0 z-20">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-10">
+    <header className="fixed top-0 left-0 right-0 z-50 px-3 pt-0 sm:px-5 sm:pt-0">
+      <nav className="mx-auto flex max-w-7xl items-center justify-between rounded-2xl border border-white/30 bg-forest-950/55 px-5 py-4 shadow-lg shadow-black/10 backdrop-blur-2xl transition-all duration-300 sm:px-7 lg:px-10">
         <Link
           to="/"
           className="flex items-center gap-3"
@@ -54,7 +55,7 @@ export default function Navbar() {
           </div>
         </Link>
 
-        <ul className="hidden items-center gap-8 text-sm font-medium text-white/85 md:flex">
+        <ul className="hidden items-center gap-8 text-sm font-medium text-white md:flex">
           {links.map((l, i) => (
             <li key={l.key}>
               {l.key === "home" ? (
@@ -80,7 +81,7 @@ export default function Navbar() {
               onClick={() => setLangOpen((v) => !v)}
               aria-expanded={langOpen}
               aria-label="Select language"
-              className="flex items-center gap-1 rounded-full px-2 py-1.5 text-sm text-white/80 hover:bg-white/10"
+              className="flex items-center gap-1 rounded-full px-2 py-1.5 text-sm text-white drop-shadow-sm hover:bg-white/15 hover:bg-white/10"
             >
               <Globe size={16} />
               {i18n.language === "am" ? "አማ" : "EN"}
@@ -129,7 +130,7 @@ export default function Navbar() {
 
           <Link
             to="/login"
-            className="hidden rounded-full border border-white/30 px-5 py-2 text-sm font-medium text-white transition hover:bg-white/10 sm:block"
+            className="hidden rounded-full border border-white/30 px-5 py-2 text-sm font-medium border border-white/40 bg-black/10 text-white backdrop-blur-md transition hover:bg-white/15transition hover:bg-white/10 sm:block"
           >
             {t("landing.login")}
           </Link>
