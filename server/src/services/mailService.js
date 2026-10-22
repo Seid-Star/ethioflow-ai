@@ -28,7 +28,7 @@ function getTransporter() {
   return transporter;
 }
 
-export async function sendMail({ to, subject, text, html }) {
+export async function sendMail({ to, subject, text, html, replyTo }) {
   if (!mailConfigured()) {
     if (process.env.NODE_ENV === "production")
       throw new Error("Email is not configured on the server");
@@ -44,6 +44,7 @@ export async function sendMail({ to, subject, text, html }) {
     subject,
     text,
     html,
+    ...(replyTo ? { replyTo } : {}),
   });
   return { delivered: true };
 }
