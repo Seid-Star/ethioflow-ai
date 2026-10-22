@@ -1,14 +1,21 @@
 {
   "landing": {
-  "nav": { "home": "መነሻ", "features": "ገፅታዎች", "pricing": "ዋጋ", "about": "ስለ እኛ", "contact": "አግኙን" },
-  "login": "ግባ",
-  "getStarted": "ጀምር",
-  "eyebrow": "ብልህ ንግድ — ለኢትዮጵያ ነጋዴዎች AI",
-  "subtitle": "ኢትዮጵያዊ አነስተኛ ነጋዴዎች ሽያጭ፣ እቃ ክምችት፣ የደንበኛ ብድር እና ወጪዎችን እንዲያስተዳድሩ የሚያግዝ ከመስመር ውጭም የሚሰራ በAI የሚንቀሳቀስ የፋይናንስ ስርዓት።",
-  "startTrial": "ነፃ ሙከራ ጀምር",
-  "watchDemo": "ትዕይንት ይመልከቱ",
-  "demoLength": "2 ደቂቃ"
-},
+    "nav": {
+      "home": "መነሻ",
+      "platform": "መድረኩ",
+      "features": "ገፅታዎች",
+      "pricing": "ዋጋ",
+      "about": "ስለ እኛ",
+      "contact": "አግኙን"
+    },
+    "login": "ግባ",
+    "getStarted": "ጀምር",
+    "eyebrow": "ብልህ ንግድ — ለኢትዮጵያ ነጋዴዎች AI",
+    "subtitle": "ኢትዮጵያዊ አነስተኛ ነጋዴዎች ሽያጭ፣ እቃ ክምችት፣ የደንበኛ ብድር እና ወጪዎችን እንዲያስተዳድሩ የሚያግዝ ከመስመር ውጭም የሚሰራ በAI የሚንቀሳቀስ የፋይናንስ ስርዓት።",
+    "startTrial": "ነፃ ሙከራ ጀምር",
+    "watchDemo": "ትዕይንት ይመልከቱ",
+    "demoLength": "2 ደቂቃ"
+  },
   "nav": {
     "dashboard": "ዳሽቦርድ",
     "pos": "ሽያጭ (POS)",
@@ -21,8 +28,8 @@
     "purchases": "ግዢዎች",
     "expenses": "ወጪዎች",
     "finance": "ፋይናንስ",
-"subscription": "የደንበኝነት ምዝገባ",
-"audit": "የእንቅስቃሴ መዝገብ",
+    "subscription": "የደንበኝነት ምዝገባ",
+    "audit": "የእንቅስቃሴ መዝገብ",
     "reports": "ሪፖርቶች",
     "ai": "AI አማካሪ",
     "settings": "ቅንብሮች"
