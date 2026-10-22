@@ -18,7 +18,7 @@ const emptyForm = {
 };
 
 const inputClass =
-  "w-full rounded-lg border border-black/10 px-3 py-2 text-sm outline-none focus:border-forest-700";
+  "w-full min-w-0 rounded-xl border border-black/10 bg-white px-3.5 py-2.5 text-sm text-forest-950 outline-none transition placeholder:text-ink-900/35 focus:border-forest-700 focus:ring-2 focus:ring-forest-700/10";
 
 function Field({ label, children }) {
   return (
@@ -115,89 +115,110 @@ export default function Products() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-forest-950">Products</h1>
-          <p className="text-sm text-ink-900/60">Your product catalogue</p>
+          <h1 className="text-2xl font-bold tracking-tight text-forest-950 sm:text-3xl">
+            Products
+          </h1>
+          <p className="mt-1 text-sm text-ink-900/60">Your product catalogue</p>
         </div>
         <button
           onClick={openAddModal}
-          className="flex items-center gap-2 rounded-full bg-gold-500 px-5 py-2.5 text-sm font-semibold text-forest-950 hover:bg-gold-600"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gold-500 px-5 py-3 text-sm font-semibold text-forest-950 shadow-sm transition hover:bg-gold-600 focus:outline-none focus:ring-2 focus:ring-gold-500/40 sm:w-auto sm:py-2.5"
         >
           <Plus size={16} /> Add Product
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-black/5 bg-white">
+      <div className="overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm">
         {loading ? (
-          <p className="p-6 text-sm text-ink-900/50">Loading...</p>
+          <div className="p-8 text-center text-sm text-ink-900/50">
+            <p className="font-medium text-forest-950">Loading products...</p>
+          </div>
         ) : products.length === 0 ? (
-          <p className="p-6 text-sm text-ink-900/50">
-            No products yet. Add your first one.
-          </p>
+          <div className="px-5 py-12 text-center sm:px-8">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-forest-50 text-forest-800">
+              <Plus size={22} />
+            </div>
+            <p className="text-sm font-semibold text-forest-950">
+              No products yet
+            </p>
+            <p className="mt-1 text-sm text-ink-900/55">
+              Add your first product to get started.
+            </p>
+          </div>
         ) : (
-          <table className="w-full min-w-[760px] text-sm">
-            <thead className="bg-forest-50 text-left text-xs uppercase text-ink-900/50">
-              <tr>
-                <th className="px-5 py-3">Name</th>
-                <th className="px-5 py-3">Barcode</th>
-                <th className="px-5 py-3">Cost</th>
-                <th className="px-5 py-3">Selling Price</th>
-                <th className="px-5 py-3">Stock</th>
-                <th className="px-5 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((p) => (
-                <tr key={p._id} className="border-t border-black/5">
-                  <td className="px-5 py-3 font-medium text-forest-950">
-                    {p.name}
-                  </td>
-                  <td className="px-5 py-3 font-mono text-xs text-ink-900/60">
-                    {p.barcode || "—"}
-                  </td>
-                  <td className="px-5 py-3">{p.costPrice} ETB</td>
-                  <td className="px-5 py-3">{p.sellingPrice} ETB</td>
-                  <td className="px-5 py-3">
-                    <span
-                      className={
-                        p.currentStock <= p.minStock
-                          ? "font-semibold text-red-600"
-                          : ""
-                      }
-                    >
-                      {p.currentStock}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => setLabelProduct(p)}
-                        title="Barcode / QR label"
-                        className="rounded-lg p-1.5 hover:bg-black/5"
-                      >
-                        <QrCode size={15} />
-                      </button>
-                      <button
-                        onClick={() => openEditModal(p)}
-                        title="Edit"
-                        className="rounded-lg p-1.5 hover:bg-black/5"
-                      >
-                        <Pencil size={15} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(p._id)}
-                        title="Remove"
-                        className="rounded-lg p-1.5 hover:bg-red-50"
-                      >
-                        <Trash2 size={15} className="text-red-500" />
-                      </button>
-                    </div>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[700px] text-sm">
+              <thead className="bg-forest-50 text-left text-[11px] font-semibold uppercase tracking-wider text-forest-950/60">
+                <tr>
+                  <th className="px-5 py-3">Name</th>
+                  <th className="px-5 py-3">Barcode</th>
+                  <th className="px-5 py-3">Cost</th>
+                  <th className="px-5 py-3">Selling Price</th>
+                  <th className="px-5 py-3">Stock</th>
+                  <th className="px-5 py-3"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {products.map((p) => (
+                  <tr
+                    key={p._id}
+                    className="border-t border-black/5 transition-colors hover:bg-forest-50/50"
+                  >
+                    <td className="px-5 py-4 font-semibold text-forest-950">
+                      {p.name}
+                    </td>
+                    <td className="px-5 py-4 font-mono text-xs text-ink-900/60">
+                      {p.barcode || "—"}
+                    </td>
+                    <td className="whitespace-nowrap px-5 py-4 text-ink-900/70">
+                      {p.costPrice} ETB
+                    </td>
+                    <td className="whitespace-nowrap px-5 py-4 font-semibold text-forest-950">
+                      {p.sellingPrice} ETB
+                    </td>
+                    <td className="px-5 py-4">
+                      <span
+                        className={
+                          p.currentStock <= p.minStock
+                            ? "font-semibold text-red-600"
+                            : ""
+                        }
+                      >
+                        {p.currentStock}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setLabelProduct(p)}
+                          title="Barcode / QR label"
+                          className="flex h-9 w-9 items-center justify-center rounded-xl text-forest-800 transition hover:bg-forest-50 focus:outline-none focus:ring-2 focus:ring-forest-700/20"
+                        >
+                          <QrCode size={15} />
+                        </button>
+                        <button
+                          onClick={() => openEditModal(p)}
+                          title="Edit"
+                          className="flex h-9 w-9 items-center justify-center rounded-xl text-forest-800 transition hover:bg-forest-50 focus:outline-none focus:ring-2 focus:ring-forest-700/20"
+                        >
+                          <Pencil size={15} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(p._id)}
+                          title="Remove"
+                          className="flex h-9 w-9 items-center justify-center rounded-xl transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                        >
+                          <Trash2 size={15} className="text-red-500" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -206,7 +227,7 @@ export default function Products() {
         onClose={() => setModalOpen(false)}
         title={editingId ? "Edit Product" : "Add Product"}
       >
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
               {error}
@@ -222,7 +243,7 @@ export default function Products() {
             />
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="SKU">
               <input
                 value={form.sku}
@@ -241,7 +262,7 @@ export default function Products() {
                   type="button"
                   onClick={() => setScannerOpen(true)}
                   title="Scan with camera"
-                  className="flex shrink-0 items-center justify-center rounded-lg border border-black/10 px-2.5 hover:bg-forest-50"
+                  className="flex min-h-10 shrink-0 items-center justify-center rounded-xl border border-black/10 px-3 text-forest-800 transition hover:bg-forest-50 focus:outline-none focus:ring-2 focus:ring-forest-700/20"
                 >
                   <ScanLine size={16} />
                 </button>
@@ -249,7 +270,7 @@ export default function Products() {
             </Field>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Category">
               <input
                 value={form.category}
@@ -266,7 +287,7 @@ export default function Products() {
             </Field>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Cost price (ETB)">
               <input
                 type="number"
@@ -289,7 +310,7 @@ export default function Products() {
             </Field>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 pb-2">
+          <div className="grid grid-cols-1 gap-3 pb-2 sm:grid-cols-2">
             <Field label="Current stock">
               <input
                 type="number"
@@ -310,7 +331,7 @@ export default function Products() {
 
           <button
             type="submit"
-            className="w-full rounded-full bg-gold-500 py-2.5 text-sm font-semibold text-forest-950 hover:bg-gold-600"
+            className="w-full rounded-full bg-gold-500 py-3 text-sm font-semibold text-forest-950 shadow-sm transition hover:bg-gold-600 focus:outline-none focus:ring-2 focus:ring-gold-500/40"
           >
             {editingId ? "Save Changes" : "Add Product"}
           </button>
@@ -377,7 +398,7 @@ function LabelModal({ product, onClose, onSaved }) {
     <Modal isOpen onClose={onClose} title="Product Label">
       {product.barcode ? (
         <>
-          <div className="print-area mx-auto flex w-56 flex-col items-center rounded-xl border border-dashed border-black/15 p-4 text-center">
+          <div className="print-area mx-auto flex w-full max-w-56 flex-col items-center rounded-2xl border border-dashed border-black/15 bg-white p-5 text-center">
             <p className="text-sm font-bold text-forest-950">{product.name}</p>
             <div className="my-3">
               <QRCodeSVG value={product.barcode} size={150} level="M" />
@@ -390,16 +411,16 @@ function LabelModal({ product, onClose, onSaved }) {
             </p>
           </div>
 
-          <div className="mt-5 flex gap-2">
+          <div className="mt-5 flex flex-col gap-2 sm:flex-row">
             <button
               onClick={() => window.print()}
-              className="flex flex-1 items-center justify-center gap-2 rounded-full bg-gold-500 py-2.5 text-sm font-semibold text-forest-950 hover:bg-gold-600"
+              className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-gold-500 px-4 py-2.5 text-sm font-semibold text-forest-950 transition hover:bg-gold-600"
             >
               <Printer size={15} /> Print label
             </button>
             <button
               onClick={onClose}
-              className="rounded-full border border-black/10 px-5 py-2.5 text-sm font-medium hover:bg-black/5"
+              className="min-h-11 rounded-full border border-black/10 px-5 py-2.5 text-sm font-medium text-forest-950 transition hover:bg-black/5"
             >
               Close
             </button>
