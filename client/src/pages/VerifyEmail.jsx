@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, Mail, ArrowRight } from "lucide-react";
 import { api } from "../api/axios";
 import AuthShell from "../components/auth/AuthShell";
 import ResendVerification from "../components/auth/ResendVerification";
@@ -8,21 +8,27 @@ import ResendVerification from "../components/auth/ResendVerification";
 export default function VerifyEmail() {
   const [params] = useSearchParams();
   const token = params.get("token");
+
   const [state, setState] = useState({
     phase: token ? "verifying" : "failed",
     message: token ? "" : "This verification link is not valid",
   });
+
   const [email, setEmail] = useState("");
   const started = useRef(false);
 
   useEffect(() => {
     if (!token || started.current) return;
+
     started.current = true;
 
     api
       .post("/auth/verify-email", { token })
       .then(({ data }) =>
-        setState({ phase: data.already ? "already" : "success", message: "" }),
+        setState({
+          phase: data.already ? "already" : "success",
+          message: "",
+        }),
       )
       .catch((err) =>
         setState({
@@ -38,61 +44,110 @@ export default function VerifyEmail() {
 
   return (
     <AuthShell>
-      <div className="text-center">
+      <div className="animate-[fadeIn_0.5s_ease-out] text-center">
         {phase === "verifying" && (
           <>
-            <Loader2
-              size={44}
-              className="mx-auto mb-3 animate-spin text-forest-700"
-            />
-            <h1 className="text-xl font-bold text-forest-950">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-yellow-400/20 bg-yellow-400/10">
+              <Loader2 size={32} className="animate-spin text-yellow-400" />
+            </div>
+
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.25em] text-yellow-400">
+              Please wait
+            </p>
+
+            <h1 className="text-2xl font-bold text-white">
               Verifying your email
             </h1>
-            <p className="mt-1 text-sm text-ink-900/55">One moment...</p>
+
+            <p className="mt-3 text-sm text-white/50">
+              We're confirming your email address. This will only take a moment.
+            </p>
           </>
         )}
 
         {(phase === "success" || phase === "already") && (
           <>
-            <CheckCircle2 size={48} className="mx-auto mb-3 text-emerald-500" />
-            <h1 className="mb-1 text-xl font-bold text-forest-950">
-              {phase === "already" ? "Already verified" : "Email verified"}
-            </h1>
-            <p className="mb-6 text-sm text-ink-900/55">
-              Your email is confirmed. You can log in now.
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10">
+              <CheckCircle2 size={34} className="text-emerald-400" />
+            </div>
+
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.25em] text-emerald-400">
+              {phase === "already" ? "Already confirmed" : "Success"}
             </p>
+
+            <h1 className="mb-3 text-2xl font-bold text-white">
+              {phase === "already"
+                ? "Email already verified"
+                : "Email verified!"}
+            </h1>
+
+            <p className="mb-7 text-sm leading-6 text-white/50">
+              Your email is confirmed. You can now log in to your EthioFlow AI
+              account.
+            </p>
+
             <Link
               to="/login?verified=1"
-              className="block rounded-full bg-gold-500 py-2.5 text-sm font-semibold text-forest-950 hover:bg-gold-600"
+              className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-yellow-300 via-yellow-400 to-amber-500 py-3.5 text-sm font-bold text-[#17120a] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(234,179,8,0.25)]"
             >
-              Log in
+              Log in to your account
+              <ArrowRight
+                size={17}
+                className="transition-transform duration-300 group-hover:translate-x-1"
+              />
             </Link>
           </>
         )}
 
         {phase === "failed" && (
           <>
-            <XCircle size={48} className="mx-auto mb-3 text-red-500" />
-            <h1 className="mb-1 text-xl font-bold text-forest-950">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-red-400/20 bg-red-400/10">
+              <XCircle size={34} className="text-red-400" />
+            </div>
+
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.25em] text-red-400">
+              Verification unsuccessful
+            </p>
+
+            <h1 className="mb-3 text-2xl font-bold text-white">
               Link not accepted
             </h1>
-            <p className="mb-5 text-sm text-ink-900/55">{message}</p>
 
-            <label className="mb-1 block text-left text-sm font-medium text-ink-900/80">
-              Your email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="mb-3 w-full rounded-lg border border-black/10 px-3 py-2.5 text-sm outline-none focus:border-forest-700"
-            />
+            <p role="alert" className="mb-6 text-sm leading-6 text-white/55">
+              {message}
+            </p>
+
+            <div className="mb-4 text-left">
+              <label
+                htmlFor="verification-email"
+                className="mb-2 block text-sm font-medium text-white/75"
+              >
+                Your email
+              </label>
+
+              <div className="relative">
+                <Mail
+                  size={17}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/35"
+                />
+
+                <input
+                  id="verification-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  className="w-full rounded-xl border border-white/10 bg-black/25 py-3 pl-10 pr-4 text-sm text-white placeholder:text-white/30 outline-none transition duration-300 focus:border-yellow-400/70 focus:ring-2 focus:ring-yellow-400/10"
+                />
+              </div>
+            </div>
+
             <ResendVerification email={email.trim()} />
 
             <Link
               to="/login"
-              className="mt-5 block text-sm font-medium text-forest-700"
+              className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-white/50 transition-colors hover:text-yellow-400"
             >
               Back to login
             </Link>
