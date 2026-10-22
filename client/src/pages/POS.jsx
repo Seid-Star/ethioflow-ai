@@ -277,17 +277,17 @@ export default function POS() {
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(360px,0.9fr)]">
+        <div className="min-w-0 space-y-1">
           {!isOnline && (
-            <div className="mb-4 flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <div className="mb-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm leading-5 text-amber-900 shadow-sm">
               <CloudOff size={16} />
               You're offline. Sales will be saved on this device and synced
               automatically once you're back online.
             </div>
           )}
 
-          <div className="mb-1 flex items-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-2">
+          <div className="mb-1 flex items-center gap-3 rounded-2xl border border-black/10 bg-white px-4 py-3 shadow-sm transition focus-within:border-forest-700 focus-within:ring-4 focus-within:ring-forest-700/10">
             <Search size={18} className="text-ink-900/40" />
             <input
               value={search}
@@ -298,11 +298,11 @@ export default function POS() {
               onKeyDown={handleSearchKeyDown}
               placeholder="Search, or scan a barcode..."
               autoFocus
-              className="w-full bg-transparent text-sm outline-none"
+              className="w-full min-w-0 bg-transparent text-sm text-forest-950 outline-none placeholder:text-ink-900/40"
             />
             <button
               onClick={() => setScannerOpen(true)}
-              className="flex shrink-0 items-center gap-1.5 rounded-lg bg-forest-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-forest-800"
+              className="flex shrink-0 items-center gap-2 rounded-xl bg-forest-900 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-forest-800 active:scale-[0.98]"
             >
               <ScanLine size={14} /> Scan
             </button>
@@ -311,13 +311,13 @@ export default function POS() {
             {searchNotice}
           </p>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 2xl:grid-cols-4">
             {filtered.map((p) => (
               <button
                 key={p._id}
                 onClick={() => p.currentStock > 0 && addItem(p)}
                 disabled={p.currentStock === 0}
-                className="rounded-xl border border-black/5 bg-white p-4 text-left transition hover:border-forest-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40"
+                className="group min-h-28 rounded-2xl border border-black/5 bg-white p-4 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-forest-700/40 hover:shadow-lg hover:shadow-forest-900/5 focus:outline-none focus:ring-2 focus:ring-forest-700/20 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:shadow-sm"
               >
                 <p className="mb-1 text-sm font-semibold text-forest-950">
                   {p.name}
@@ -338,12 +338,12 @@ export default function POS() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-black/5 bg-white p-5">
-          <h2 className="mb-4 text-sm font-semibold text-forest-950">
+        <div className="overflow-hidden rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6 xl:sticky xl:top-5">
+          <h2 className="mb-5 flex items-center justify-between text-base font-bold tracking-tight text-forest-950">
             Current Sale
           </h2>
 
-          <div className="mb-4">
+          <div className="mb-5">
             <label className="mb-1 flex items-center gap-1.5 text-xs font-medium text-ink-900/70">
               <UserCircle2 size={14} /> Customer (optional)
             </label>
@@ -354,7 +354,7 @@ export default function POS() {
                 setRedeemPoints(0);
               }}
               disabled={!isOnline}
-              className="w-full rounded-lg border border-black/10 px-3 py-2 text-sm outline-none focus:border-forest-700 disabled:bg-black/5 disabled:text-ink-900/40"
+              className="w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-forest-700 focus:ring-4 focus:ring-forest-700/10 disabled:bg-black/5 disabled:text-ink-900/40"
             >
               <option value="">Walk-in customer</option>
               {customers.map((c) => (
@@ -372,7 +372,7 @@ export default function POS() {
             )}
 
             {selectedCustomer && (
-              <div className="mt-3 rounded-xl bg-gradient-to-br from-forest-900 to-forest-700 p-3.5 text-white">
+              <div className="mt-3 rounded-2xl border border-white/10 bg-gradient-to-br from-forest-950 via-forest-900 to-forest-700 p-4 text-white shadow-inner">
                 <div className="flex items-center justify-between">
                   <p className="flex items-center gap-1.5 text-xs font-medium text-gold-500">
                     <Star size={13} className="fill-gold-500" /> Loyalty Points
@@ -388,12 +388,12 @@ export default function POS() {
                       max={maxRedeemable}
                       value={redeemPoints}
                       onChange={(e) => setRedeemPoints(e.target.value)}
-                      className="w-20 rounded-md bg-white/10 px-2 py-1 text-sm text-white outline-none placeholder:text-white/40"
+                      className="w-20 rounded-lg border border-white/15 bg-white/10 px-2.5 py-2 text-sm text-white outline-none placeholder:text-white/40 focus:border-gold-500"
                       placeholder="0"
                     />
                     <button
                       onClick={() => setRedeemPoints(maxRedeemable)}
-                      className="rounded-md bg-gold-500 px-2.5 py-1 text-xs font-semibold text-forest-950"
+                      className="rounded-lg bg-gold-500 px-3 py-2 text-xs font-bold text-forest-950 transition hover:bg-gold-400"
                     >
                       Use max
                     </button>
@@ -419,11 +419,11 @@ export default function POS() {
               Cart is empty
             </p>
           ) : (
-            <div className="mb-4 space-y-3">
+            <div className="mb-4 max-h-64 space-y-3 overflow-y-auto pr-1">
               {items.map((item) => (
                 <div
                   key={item.productId}
-                  className="flex items-center justify-between gap-2"
+                  className="flex items-center justify-between gap-2 rounded-xl bg-stone-50/80 px-2.5 py-2"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-forest-950">
@@ -436,20 +436,20 @@ export default function POS() {
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => decrementQty(item.productId)}
-                      className="rounded-md border border-black/10 p-1 hover:bg-black/5"
+                      className="rounded-lg border border-black/10 bg-white p-1.5 transition hover:border-forest-700/30 hover:bg-forest-50"
                     >
                       <Minus size={12} />
                     </button>
                     <span className="w-5 text-center text-sm">{item.qty}</span>
                     <button
                       onClick={() => incrementQty(item.productId)}
-                      className="rounded-md border border-black/10 p-1 hover:bg-black/5"
+                      className="rounded-lg border border-black/10 bg-white p-1.5 transition hover:border-forest-700/30 hover:bg-forest-50"
                     >
                       <Plus size={12} />
                     </button>
                     <button
                       onClick={() => removeItem(item.productId)}
-                      className="ml-1 rounded-md p-1 hover:bg-red-50"
+                      className="ml-1 rounded-lg p-1.5 transition hover:bg-red-50"
                     >
                       <Trash2 size={14} className="text-red-500" />
                     </button>
@@ -459,7 +459,7 @@ export default function POS() {
             </div>
           )}
 
-          <div className="mb-4 space-y-2 border-t border-black/5 pt-4">
+          <div className="mb-5 space-y-3 rounded-2xl border border-black/5 bg-stone-50/70 p-4">
             <div className="flex justify-between text-sm">
               <span className="text-ink-900/60">Subtotal</span>
               <span>{sub.toFixed(2)} ETB</span>
@@ -471,7 +471,7 @@ export default function POS() {
                 min="0"
                 value={discount}
                 onChange={(e) => setDiscount(e.target.value)}
-                className="w-24 rounded-md border border-black/10 px-2 py-1 text-right text-sm outline-none focus:border-forest-700"
+                className="w-24 rounded-lg border border-black/10 bg-white px-2.5 py-1.5 text-right text-sm outline-none focus:border-forest-700 focus:ring-2 focus:ring-forest-700/10"
               />
             </div>
             {pointsDiscount > 0 && (
@@ -487,10 +487,10 @@ export default function POS() {
                 min="0"
                 value={tax}
                 onChange={(e) => setTax(e.target.value)}
-                className="w-24 rounded-md border border-black/10 px-2 py-1 text-right text-sm outline-none focus:border-forest-700"
+                className="w-24 rounded-lg border border-black/10 bg-white px-2.5 py-1.5 text-right text-sm outline-none focus:border-forest-700 focus:ring-2 focus:ring-forest-700/10"
               />
             </div>
-            <div className="flex justify-between border-t border-black/5 pt-2 text-base font-bold text-forest-950">
+            <div className="flex justify-between border-t border-black/10 pt-3 text-base font-bold text-forest-950">
               <span>Total</span>
               <span>{total.toFixed(2)} ETB</span>
             </div>
@@ -502,12 +502,12 @@ export default function POS() {
             )}
           </div>
 
-          <div className="mb-4">
+          <div className="mb-5">
             <div className="mb-2 flex items-center justify-between">
               <p className="text-xs font-medium text-ink-900/70">Payment</p>
               <button
                 onClick={() => setIsSplit((v) => !v)}
-                className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
                   isSplit
                     ? "bg-forest-700 text-white"
                     : "border border-black/10 text-ink-900/60"
@@ -523,7 +523,7 @@ export default function POS() {
                   <button
                     key={m.value}
                     onClick={() => setSingleMethod(m.value)}
-                    className={`rounded-lg border px-3 py-2 text-xs font-medium ${
+                    className={`rounded-xl border px-3 py-2.5 text-xs font-semibold transition ${
                       singleMethod === m.value
                         ? "border-forest-700 bg-forest-50 text-forest-900"
                         : "border-black/10 text-ink-900/60 hover:bg-black/5"
@@ -542,7 +542,7 @@ export default function POS() {
                       onChange={(e) =>
                         updateSplitLine(i, "method", e.target.value)
                       }
-                      className="flex-1 rounded-md border border-black/10 px-2 py-1.5 text-xs outline-none"
+                      className="min-w-0 flex-1 rounded-lg border border-black/10 bg-white px-2.5 py-2 text-xs outline-none focus:border-forest-700"
                     >
                       {methods.map((m) => (
                         <option key={m.value} value={m.value}>
@@ -558,7 +558,7 @@ export default function POS() {
                         updateSplitLine(i, "amount", e.target.value)
                       }
                       placeholder="0.00"
-                      className="w-24 rounded-md border border-black/10 px-2 py-1.5 text-right text-xs outline-none"
+                      className="w-24 rounded-lg border border-black/10 bg-white px-2.5 py-2 text-right text-xs outline-none focus:border-forest-700"
                     />
                     {splitLines.length > 1 && (
                       <button
@@ -572,7 +572,7 @@ export default function POS() {
                 ))}
                 <button
                   onClick={addSplitLine}
-                  className="text-xs font-medium text-forest-700 hover:underline"
+                  className="rounded-lg px-1 py-1 text-left text-xs font-semibold text-forest-700 transition hover:text-forest-950 hover:underline"
                 >
                   + Add another payment line
                 </button>
@@ -598,7 +598,7 @@ export default function POS() {
           <button
             onClick={handleCheckout}
             disabled={!canCharge}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-gold-500 py-3 text-sm font-semibold text-forest-950 hover:bg-gold-600 disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-gold-500 py-3.5 text-sm font-bold text-forest-950 shadow-sm transition hover:bg-gold-400 hover:shadow-md active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:shadow-none"
           >
             {isOnline ? <CheckCircle2 size={16} /> : <CloudOff size={16} />}
             {submitting
@@ -625,7 +625,7 @@ function Receipt({ sale, onNewSale }) {
   const pointsEarned = sale.pointsEarned || 0;
 
   return (
-    <div className="mx-auto max-w-sm rounded-2xl border border-black/5 bg-white p-6 text-center">
+    <div className="mx-auto max-w-md rounded-3xl border border-black/5 bg-white p-6 text-center shadow-lg shadow-forest-950/5 sm:p-8">
       {sale.isOffline ? (
         <>
           <CloudOff size={48} className="mx-auto mb-3 text-amber-500" />
@@ -711,7 +711,7 @@ function Receipt({ sale, onNewSale }) {
 
       <button
         onClick={onNewSale}
-        className="w-full rounded-full bg-gold-500 py-2.5 text-sm font-semibold text-forest-950 hover:bg-gold-600"
+        className="w-full rounded-2xl bg-gold-500 py-3 text-sm font-bold text-forest-950 shadow-sm transition hover:bg-gold-400 hover:shadow-md"
       >
         New Sale
       </button>
