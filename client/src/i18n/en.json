@@ -1,14 +1,21 @@
 {
   "landing": {
-  "nav": { "home": "Home", "features": "Features", "pricing": "Pricing", "about": "About", "contact": "Contact" },
-  "login": "Login",
-  "getStarted": "Get Started",
-  "eyebrow": "SMART BUSINESS — AI FOR ETHIOPIA'S MERCHANTS",
-  "subtitle": "An offline-first, AI-powered financial and business management platform that helps Ethiopian micro and small businesses manage sales, inventory, customer credit and expenses — and turns everyday transactions into actionable financial intelligence.",
-  "startTrial": "Start Your Free Trial",
-  "watchDemo": "Watch Demo",
-  "demoLength": "2 min"
-},
+    "nav": {
+      "home": "Home",
+      "platform": "Platform",
+      "features": "Features",
+      "pricing": "Pricing",
+      "about": "About",
+      "contact": "Contact"
+    },
+    "login": "Login",
+    "getStarted": "Get Started",
+    "eyebrow": "SMART BUSINESS — AI FOR ETHIOPIA'S MERCHANTS",
+    "subtitle": "An offline-first, AI-powered financial and business management platform that helps Ethiopian micro and small businesses manage sales, inventory, customer credit and expenses — and turns everyday transactions into actionable financial intelligence.",
+    "startTrial": "Start Your Free Trial",
+    "watchDemo": "Watch Demo",
+    "demoLength": "2 min"
+  },
   "nav": {
     "dashboard": "Dashboard",
     "pos": "Sales (POS)",
@@ -20,7 +27,7 @@
     "suppliers": "Suppliers",
     "purchases": "Purchases",
     "expenses": "Expenses",
-    "finance":"Finance",
+    "finance": "Finance",
     "reports": "Reports",
     "ai": "AI Advisor",
     "settings": "Settings"
