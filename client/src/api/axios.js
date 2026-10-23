@@ -26,7 +26,7 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     const isAuthCall =
-      /\/auth\/(login|register|refresh|verify-email|resend-verification)/.test(
+      /\/auth\/(login|register|refresh|verify-email|resend-verification|forgot-password|reset-password)/.test(
         originalRequest?.url || "",
       );
 
