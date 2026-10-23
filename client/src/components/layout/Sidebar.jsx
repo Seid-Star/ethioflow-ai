@@ -17,8 +17,10 @@ import {
   CreditCard,
   ScrollText,
   Settings,
+  ShieldCheck,
 } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
+import { useAdminUnread } from "../../lib/useAdminUnread";
 import PlanBadge from "./PlanBadge";
 
 const navItems = [
@@ -115,14 +117,25 @@ const navItems = [
     key: "settings",
     label: "Settings",
   },
+  {
+    to: "/dashboard/admin",
+    icon: ShieldCheck,
+    key: "admin",
+    label: "Platform Admin",
+    admin: true,
+  },
 ];
 
 export default function Sidebar() {
   const { t } = useTranslation();
   const role = useAuthStore((s) => s.user?.role);
-  const visible = navItems.filter(
-    (item) => !item.roles || item.roles.includes(role),
-  );
+  const isAdmin = useAuthStore((s) => Boolean(s.user?.isPlatformAdmin));
+  const unread = useAdminUnread(isAdmin);
+
+  const visible = navItems.filter((item) => {
+    if (item.admin) return isAdmin;
+    return !item.roles || item.roles.includes(role);
+  });
 
   return (
     <aside className="flex h-screen w-64 shrink-0 flex-col bg-forest-950 text-white">
@@ -152,7 +165,15 @@ export default function Sidebar() {
               }`
             }
           >
-            <Icon size={17} /> {t(`nav.${key}`, { defaultValue: label })}
+            <Icon size={17} />
+            <span className="flex-1">
+              {t(`nav.${key}`, { defaultValue: label })}
+            </span>
+            {key === "admin" && unread > 0 && (
+              <span className="rounded-full bg-gold-500 px-1.5 text-[10px] font-bold text-forest-950">
+                {unread}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>
