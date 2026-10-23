@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🇪🇹 EthioFlow AI 🌿
+# 🇪🇹 EthioFlow AI
 
 ### Smart Business Management for Ethiopian Businesses
 
@@ -297,7 +297,7 @@ The backend package specifies the ISC license. Confirm the intended license for 
 
 <div align="center">
 
-### 🌿 EthioFlow AI
+### EthioFlow AI
 
 **Smarter workflows. Better business.**
 
