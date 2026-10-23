@@ -32,6 +32,9 @@ const businessSchema = new mongoose.Schema(
     },
     trialEndsAt: Date,
     currentPeriodEnd: Date,
+    suspended: { type: Boolean, default: false },
+    suspendedReason: String,
+    suspendedAt: Date,
   },
   { timestamps: true },
 );
