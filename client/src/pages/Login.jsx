@@ -114,7 +114,16 @@ export default function Login() {
         </div>
 
         <div className="mb-7">
-          <label className={labelClass}>Password</label>
+          <div className="mb-2 flex items-center justify-between">
+            <label className={labelClass.replace("mb-2 ", "")}>Password</label>
+
+            <Link
+              to="/forgot-password"
+              className="text-xs font-semibold text-yellow-400 transition-colors hover:text-yellow-200"
+            >
+              Forgot password?
+            </Link>
+          </div>
 
           <PasswordInput
             value={password}
