@@ -8,6 +8,8 @@ import {
   me,
   verifyEmail,
   resendVerification,
+  forgotPassword,
+  resetPassword,
 } from "../controllers/authController.js";
 import { protect } from "../middleware/auth.js";
 import { validateRegister, validateLogin } from "../validators/index.js";
@@ -29,6 +31,16 @@ const resendLimiter = rateLimit({
       "Too many emails requested. Please wait a few minutes and try again.",
   },
 });
+const passwordResetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: {
+    message: "Too many password reset attempts. Please try again later.",
+  },
+});
+
+router.post("/forgot-password", passwordResetLimiter, forgotPassword);
+router.post("/reset-password", passwordResetLimiter, resetPassword);
 
 router.post("/register", authLimiter, validateRegister, validate, register);
 router.post("/login", authLimiter, validateLogin, validate, login);
