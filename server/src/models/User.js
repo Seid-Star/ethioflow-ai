@@ -31,11 +31,16 @@ const userSchema = new mongoose.Schema(
     },
     status: { type: String, enum: ["active", "inactive"], default: "active" },
     refreshToken: { type: String, select: false },
+    isPlatformAdmin: { type: Boolean, default: false },
     emailVerified: { type: Boolean },
     emailVerifiedAt: Date,
     emailVerifyTokenHash: { type: String, select: false },
     emailVerifyExpires: { type: Date, select: false },
     emailVerifySentAt: { type: Date, select: false },
+
+    passwordResetTokenHash: { type: String, select: false },
+    passwordResetExpires: { type: Date, select: false },
+    passwordResetSentAt: { type: Date, select: false },
   },
   { timestamps: true },
 );
