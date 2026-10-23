@@ -24,7 +24,7 @@ import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 import auditRoutes from "./routes/auditRoutes.js";
 import { auditTrail } from "./middleware/auditTrail.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
-
+import adminRoutes from "./routes/adminRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
 function sanitizeMongoOperators(obj) {
   if (Array.isArray(obj)) {
@@ -111,6 +111,7 @@ app.use("/api/employees", employeeRoutes);
 app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/audit-logs", auditRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/admin", adminRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
