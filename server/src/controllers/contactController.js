@@ -1,18 +1,15 @@
 import crypto from "crypto";
 import asyncHandler from "express-async-handler";
-import ContactMessage, { TOPICS } from "../models/ContactMessage.js";
+import ContactMessage, {
+  TOPICS,
+  TOPIC_LABELS,
+} from "../models/ContactMessage.js";
 import { normalizePhone } from "../utils/phone.js";
 import { sendMail } from "../services/mailService.js";
 
-const TOPIC_LABELS = {
-  general: "General question",
-  demo: "Request a demo",
-  pricing: "Pricing and plans",
-  support: "Technical help",
-  partnership: "Partnership",
-};
-
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const DAILY_CONFIRMATION_CAP = 150;
 
 const clean = (value) =>
   String(value ?? "")
@@ -28,8 +25,16 @@ const escapeHtml = (value) =>
       ],
   );
 
+const teamInbox = () =>
+  (process.env.CONTACT_INBOX || process.env.SMTP_USER || "")
+    .split(",")[0]
+    .trim() || undefined;
+
 function buildNotification(contact, reference) {
   const topic = TOPIC_LABELS[contact.topic] || TOPIC_LABELS.general;
+  const inboxUrl = process.env.CLIENT_URL
+    ? `${process.env.CLIENT_URL.replace(/\/$/, "")}/dashboard/admin`
+    : "";
 
   const text = [
     "New message from the EthioFlow AI website",
@@ -42,6 +47,7 @@ function buildNotification(contact, reference) {
     "",
     "Message:",
     contact.message,
+    ...(inboxUrl ? ["", `Read and reply in the app: ${inboxUrl}`] : []),
   ].join("\n");
 
   const row = (label, value) =>
@@ -72,6 +78,37 @@ function buildNotification(contact, reference) {
   };
 }
 
+function buildConfirmation(reference) {
+  const text = [
+    "Hello,",
+    "",
+    "Thank you for contacting EthioFlow AI. We have received your message and will get back to you soon.",
+    "",
+    `Reference: ${reference}`,
+    "",
+    "This is an automatic confirmation. If you did not send a message to us, you can ignore this email.",
+    "",
+    "EthioFlow AI",
+  ].join("\n");
+
+  const html = `<div style="background:#faf8f3;padding:32px 16px;font-family:Arial,Helvetica,sans-serif;color:#0b1a15">
+  <div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2ede8">
+    <div style="background:#0a2e24;padding:22px 28px">
+      <span style="font-size:20px;font-weight:bold;color:#ffffff">EthioFlow</span><span style="font-size:20px;font-weight:bold;color:#f5b83d"> AI</span>
+    </div>
+    <div style="height:4px;background:#f5b83d"></div>
+    <div style="padding:28px">
+      <p style="font-size:16px;margin:0 0 12px">Hello,</p>
+      <p style="font-size:14px;line-height:1.6;margin:0 0 20px;color:#3d4a45">Thank you for contacting EthioFlow AI. We have received your message and will get back to you soon.</p>
+      <p style="font-size:13px;margin:0 0 20px;color:#3d4a45">Reference <b style="font-family:monospace">${escapeHtml(reference)}</b></p>
+      <p style="font-size:12px;line-height:1.6;color:#6b7a74;margin:0">This is an automatic confirmation. If you did not send a message to us, you can ignore this email.</p>
+    </div>
+  </div>
+</div>`;
+
+  return { subject: `We received your message (${reference})`, text, html };
+}
+
 async function notifyTeam(contact, reference) {
   const to =
     process.env.CONTACT_INBOX ||
@@ -85,15 +122,39 @@ async function notifyTeam(contact, reference) {
   return result.delivered;
 }
 
+async function confirmToVisitor(contact, reference) {
+  if (!contact.email) return false;
+
+  const since = new Date(Date.now() - DAY_MS);
+  const [alreadyToday, sentToday] = await Promise.all([
+    ContactMessage.exists({
+      email: contact.email,
+      acknowledgedAt: { $gte: since },
+    }),
+    ContactMessage.countDocuments({ acknowledgedAt: { $gte: since } }),
+  ]);
+  if (alreadyToday || sentToday >= DAILY_CONFIRMATION_CAP) return false;
+
+  const result = await sendMail({
+    to: contact.email,
+    replyTo: teamInbox(),
+    ...buildConfirmation(reference),
+  });
+  if (result.delivered)
+    await ContactMessage.updateOne(
+      { _id: contact._id },
+      { $set: { acknowledgedAt: new Date() } },
+    );
+  return result.delivered;
+}
+
 // POST /api/contact (public)
 export const submitContact = asyncHandler(async (req, res) => {
   if (clean(req.body?.website)) {
-    return res
-      .status(201)
-      .json({
-        received: true,
-        reference: `MSG-${crypto.randomBytes(3).toString("hex").toUpperCase()}`,
-      });
+    return res.status(201).json({
+      received: true,
+      reference: `MSG-${crypto.randomBytes(3).toString("hex").toUpperCase()}`,
+    });
   }
 
   const name = oneLine(req.body?.name);
@@ -166,5 +227,12 @@ export const submitContact = asyncHandler(async (req, res) => {
     console.error("Contact notification failed:", err.message);
   }
 
-  res.status(201).json({ received: true, reference });
+  let confirmationSent = false;
+  try {
+    confirmationSent = await confirmToVisitor(saved, reference);
+  } catch (err) {
+    console.error("Visitor confirmation failed:", err.message);
+  }
+
+  res.status(201).json({ received: true, reference, confirmationSent });
 });
