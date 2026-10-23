@@ -77,6 +77,15 @@ export async function issueVerification(user, req) {
       },
     },
   );
+  const savedUser = await User.findById(user._id)
+    .select("+emailVerifyTokenHash")
+    .lean();
+
+  console.log("Token storage diagnostic:", {
+    hashStored: Boolean(savedUser?.emailVerifyTokenHash),
+    generatedTokenMatchesStoredHash:
+      savedUser?.emailVerifyTokenHash === hashToken(token),
+  });
 
   const link = `${clientOrigin(req)}/verify-email?token=${token}`;
   return sendMail({
