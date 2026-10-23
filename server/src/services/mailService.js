@@ -28,17 +28,47 @@ function getTransporter() {
   return transporter;
 }
 
+// export async function sendMail({ to, subject, text, html, replyTo }) {
+//   if (!mailConfigured()) {
+//     if (process.env.NODE_ENV === "production")
+//       throw new Error("Email is not configured on the server");
+//     console.log(
+//       `\n📧 Email is not set up, so nothing was sent. Message for ${to}:\n   ${subject}\n   ${text.replace(/\n/g, "\n   ")}\n`,
+//     );
+//     return { delivered: false };
+//   }
+
+//   await getTransporter().sendMail({
+//     from: process.env.MAIL_FROM || `EthioFlow AI <${process.env.SMTP_USER}>`,
+//     to,
+//     subject,
+//     text,
+//     html,
+//     ...(replyTo ? { replyTo } : {}),
+//   });
+//   return { delivered: true };
+// }
+
 export async function sendMail({ to, subject, text, html, replyTo }) {
   if (!mailConfigured()) {
-    if (process.env.NODE_ENV === "production")
+    if (process.env.NODE_ENV === "production") {
       throw new Error("Email is not configured on the server");
+    }
+
     console.log(
       `\n📧 Email is not set up, so nothing was sent. Message for ${to}:\n   ${subject}\n   ${text.replace(/\n/g, "\n   ")}\n`,
     );
+
     return { delivered: false };
   }
 
-  await getTransporter().sendMail({
+  console.log("[Mail] Sending email", {
+    to,
+    subject,
+    smtpUser: process.env.SMTP_USER,
+  });
+
+  const info = await getTransporter().sendMail({
     from: process.env.MAIL_FROM || `EthioFlow AI <${process.env.SMTP_USER}>`,
     to,
     subject,
@@ -46,5 +76,11 @@ export async function sendMail({ to, subject, text, html, replyTo }) {
     html,
     ...(replyTo ? { replyTo } : {}),
   });
-  return { delivered: true };
+
+  console.log("[Mail] SMTP accepted recipients:", info.accepted);
+  console.log("[Mail] SMTP rejected recipients:", info.rejected);
+
+  return {
+    delivered: Array.isArray(info.accepted) && info.accepted.length > 0,
+  };
 }
