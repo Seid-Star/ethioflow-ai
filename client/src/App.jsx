@@ -27,6 +27,9 @@ import PlanGate from "./components/PlanGate";
 import SubscriptionReturn from "./pages/SubscriptionReturn";
 import VerifyEmail from "./pages/VerifyEmail";
 import StartScreen from "./pages/StartScreen";
+import Admin from "./pages/Admin";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 export default function App() {
   return (
     <ErrorBoundary>
@@ -36,6 +39,8 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         <Route
           path="/dashboard"
@@ -73,6 +78,7 @@ export default function App() {
           <Route path="subscription" element={<Subscription />} />
           <Route path="audit" element={<AuditLog />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="admin" element={<Admin />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />
