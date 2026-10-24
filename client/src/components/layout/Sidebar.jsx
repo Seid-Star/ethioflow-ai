@@ -141,7 +141,7 @@ export default function Sidebar() {
     <aside className="flex h-screen w-64 shrink-0 flex-col bg-forest-950 text-white">
       <div className="flex items-center gap-3 px-5 py-6">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-gold-500 to-forest-700">
-          <img src="\public\logo1.png"></img>
+          <img src="/logo1.png"></img>
         </div>
         <div className="leading-tight">
           <p className="text-sm font-bold">

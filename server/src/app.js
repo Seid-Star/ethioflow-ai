@@ -1,8 +1,131 @@
+// import express from "express";
+// import cors from "cors";
+// import morgan from "morgan";
+// import cookieParser from "cookie-parser";
+// import helmet from "helmet";
+// import rateLimit from "express-rate-limit";
+
+// import authRoutes from "./routes/authRoutes.js";
+// import productRoutes from "./routes/productRoutes.js";
+// import inventoryRoutes from "./routes/inventoryRoutes.js";
+// import saleRoutes from "./routes/saleRoutes.js";
+// import customerRoutes from "./routes/customerRoutes.js";
+// import supplierRoutes from "./routes/supplierRoutes.js";
+// import purchaseRoutes from "./routes/purchaseRoutes.js";
+// import expenseRoutes from "./routes/expenseRoutes.js";
+// import reportRoutes from "./routes/reportRoutes.js";
+// import dashboardRoutes from "./routes/dashboardRoutes.js";
+// import aiRoutes from "./routes/aiRoutes.js";
+// import syncRoutes from "./routes/syncRoutes.js";
+// import notificationRoutes from "./routes/notificationRoutes.js";
+// import ocrRoutes from "./routes/ocrRoutes.js";
+// import employeeRoutes from "./routes/employeeRoutes.js";
+// import subscriptionRoutes from "./routes/subscriptionRoutes.js";
+// import auditRoutes from "./routes/auditRoutes.js";
+// import { auditTrail } from "./middleware/auditTrail.js";
+// import { notFound, errorHandler } from "./middleware/errorHandler.js";
+// import adminRoutes from "./routes/adminRoutes.js";
+// import contactRoutes from "./routes/contactRoutes.js";
+// function sanitizeMongoOperators(obj) {
+//   if (Array.isArray(obj)) {
+//     obj.forEach(sanitizeMongoOperators);
+//     return;
+//   }
+//   if (obj && typeof obj === "object") {
+//     for (const key of Object.keys(obj)) {
+//       if (key.startsWith("$") || key.includes(".")) {
+//         delete obj[key];
+//       } else {
+//         sanitizeMongoOperators(obj[key]);
+//       }
+//     }
+//   }
+// }
+
+// function sanitizeBody(req, res, next) {
+//   sanitizeMongoOperators(req.body);
+//   next();
+// }
+
+// const app = express();
+
+// app.use(helmet());
+
+// const allowedOrigins = [
+//   process.env.CLIENT_URL,
+//   "http://localhost:5173",
+//   "http://localhost:5174",
+//   "http://localhost:5175",
+// ];
+
+// app.use(
+//   cors({
+//     origin: (origin, callback) => {
+//       if (!origin || allowedOrigins.includes(origin)) {
+//         callback(null, true);
+//       } else {
+//         callback(new Error("Not allowed by CORS"));
+//       }
+//     },
+//     credentials: true,
+//   }),
+// );
+
+// app.use(express.json());
+// app.use(sanitizeBody);
+// app.use(cookieParser());
+// app.use(morgan("dev"));
+
+// app.get("/api/health", (req, res) => {
+//   res.json({
+//     status: "ok",
+//     app: "EthioFlow AI",
+//     time: new Date().toISOString(),
+//   });
+// });
+
+// const apiLimiter = rateLimit({
+//   windowMs: 15 * 60 * 1000,
+//   max: 300,
+//   message: { message: "Too many requests. Please slow down." },
+// });
+// app.use("/api", apiLimiter);
+
+// app.use("/api", auditTrail);
+
+// app.use("/api/auth", authRoutes);
+// app.use("/api/products", productRoutes);
+// app.use("/api/inventory", inventoryRoutes);
+// app.use("/api/sales", saleRoutes);
+// app.use("/api/customers", customerRoutes);
+// app.use("/api/suppliers", supplierRoutes);
+// app.use("/api/purchases", purchaseRoutes);
+// app.use("/api/expenses", expenseRoutes);
+// app.use("/api/reports", reportRoutes);
+// app.use("/api/dashboard", dashboardRoutes);
+// app.use("/api/ai", aiRoutes);
+// app.use("/api/sync", syncRoutes);
+// app.use("/api/notifications", notificationRoutes);
+// app.use("/api/ocr", ocrRoutes);
+// app.use("/api/employees", employeeRoutes);
+// app.use("/api/subscription", subscriptionRoutes);
+// app.use("/api/audit-logs", auditRoutes);
+// app.use("/api/contact", contactRoutes);
+// app.use("/api/admin", adminRoutes);
+// app.use(notFound);
+// app.use(errorHandler);
+
+// export default app;
+
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
+import compression from "compression";
 import rateLimit from "express-rate-limit";
 
 import authRoutes from "./routes/authRoutes.js";
@@ -22,15 +145,23 @@ import ocrRoutes from "./routes/ocrRoutes.js";
 import employeeRoutes from "./routes/employeeRoutes.js";
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 import auditRoutes from "./routes/auditRoutes.js";
+import contactRoutes from "./routes/contactRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
+
 import { auditTrail } from "./middleware/auditTrail.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
-import adminRoutes from "./routes/adminRoutes.js";
-import contactRoutes from "./routes/contactRoutes.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const clientDist = path.resolve(__dirname, "../../client/dist");
+const hasClientBuild = fs.existsSync(path.join(clientDist, "index.html"));
+const isProduction = process.env.NODE_ENV === "production";
+
 function sanitizeMongoOperators(obj) {
   if (Array.isArray(obj)) {
     obj.forEach(sanitizeMongoOperators);
     return;
   }
+
   if (obj && typeof obj === "object") {
     for (const key of Object.keys(obj)) {
       if (key.startsWith("$") || key.includes(".")) {
@@ -43,38 +174,38 @@ function sanitizeMongoOperators(obj) {
 }
 
 function sanitizeBody(req, res, next) {
-  sanitizeMongoOperators(req.body);
+  if (req.body && typeof req.body === "object") {
+    sanitizeMongoOperators(req.body);
+  }
+
   next();
 }
 
 const app = express();
 
-app.use(helmet());
+app.disable("x-powered-by");
 
-const allowedOrigins = [
-  process.env.CLIENT_URL,
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "http://localhost:5175",
-];
+if (isProduction) {
+  app.set("trust proxy", 1);
+}
+
+app.use(compression());
 
 app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        "img-src": ["'self'", "data:", "blob:", "https:"],
+        "media-src": ["'self'", "blob:", "https:"],
+        "connect-src": ["'self'", "https:", "wss:"],
+        "worker-src": ["'self'", "blob:"],
+        "upgrade-insecure-requests": isProduction ? [] : null,
+      },
     },
-    credentials: true,
   }),
 );
 
-app.use(express.json());
-app.use(sanitizeBody);
-app.use(cookieParser());
-app.use(morgan("dev"));
+app.use(morgan(isProduction ? "tiny" : "dev"));
 
 app.get("/api/health", (req, res) => {
   res.json({
@@ -87,9 +218,64 @@ app.get("/api/health", (req, res) => {
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 300,
-  message: { message: "Too many requests. Please slow down." },
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    message: "Too many requests. Please slow down.",
+  },
 });
+
 app.use("/api", apiLimiter);
+
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "http://localhost:5000",
+  "http://127.0.0.1:5000",
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175",
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:5174",
+  "http://127.0.0.1:5175",
+].filter(Boolean);
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.error("Blocked CORS origin:", origin);
+    return callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+};
+
+// Serve the built frontend assets before CORS middleware.
+if (hasClientBuild) {
+  app.use(
+    express.static(clientDist, {
+      index: false,
+      setHeaders: (res, filePath) => {
+        if (/[\\/]assets[\\/]/.test(filePath)) {
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        } else {
+          res.setHeader("Cache-Control", "no-cache");
+        }
+      },
+    }),
+  );
+} else {
+  console.warn(
+    "Frontend build not found. Run npm run build in the client directory.",
+  );
+}
+
+app.use(cors(corsOptions));
+
+app.use(express.json({ limit: "1mb" }));
+app.use(sanitizeBody);
+app.use(cookieParser());
 
 app.use("/api", auditTrail);
 
@@ -112,6 +298,18 @@ app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/audit-logs", auditRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/admin", adminRoutes);
+
+// Send the React app for frontend routes.
+if (hasClientBuild) {
+  app.get(/^\/(?!api(?:\/|$)).*/, (req, res, next) => {
+    res.setHeader("Cache-Control", "no-cache");
+
+    res.sendFile(path.join(clientDist, "index.html"), (err) => {
+      if (err) next(err);
+    });
+  });
+}
+
 app.use(notFound);
 app.use(errorHandler);
 
