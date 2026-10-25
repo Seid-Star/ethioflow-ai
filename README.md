@@ -743,8 +743,7 @@ Ideas, bug reports and pull requests are welcome.
 
 <div align="center">
 
-<!-- 📸 YOUR PHOTO: run  python tools/make_avatar.py path/to/your-photo.jpg  → replaces assets/avatar.svg -->
-<img src="./assets/avatar.svg" width="190" alt="Seid Jemal">
+<img src="./client/src/assets/photo_2026-10-25_18-04-24.jpg" width="190" alt="Seid Jemal">
 
 # Seid Jemal
 
