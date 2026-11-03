@@ -739,6 +739,20 @@ Ideas, bug reports and pull requests are welcome.
 
 <div align="center"><img src="./assets/divider.svg" width="100%" alt=""></div>
 
+## 🎥 Video Presentation
+
+A 5-minute video presentation demonstrating EthioFlow AI, its main features, and how the system works.
+
+**Watch the Project Presentation:** [EthioFlow AI – Video Demonstration](https://www.awesomescreenshot.com/video/57801643?key=d39ac56bf12e21f4f76b33337b6a983a)
+
+## 👨‍💻 Team Information
+
+This project was independently developed by:
+
+| No. | Full Name  | CTC ID     |
+| :-: | ---------- | ---------- |
+|  1  | Seid Jemal | CTC-162-26 |
+
 ## 👤 Meet the Author
 
 <div align="center">
